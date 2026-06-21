@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Yeu cau cua toi')"></head>
+<body>
+<nav th:replace="fragments/layout :: navbar"></nav>
+<div class="container">
+    <div class="card">
+        <h2>Yeu cau cua toi</h2>
+        <p><a class="btn" th:href="@{/requests/new}">+ Lap yeu cau moi</a></p>
+        <table>
+            <thead>
+            <tr>
+                <th>Ma yeu cau</th>
+                <th>Loai</th>
+                <th>He thong/CSDL</th>
+                <th>Trang thai</th>
+                <th>Dang xu ly</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${rows}">
+                <td th:text="${r.requestCode}"></td>
+                <td th:text="${r.requestType}"></td>
+                <td th:text="${r.systemName + ' / ' + r.databaseName}"></td>
+                <td><span class="badge" th:text="${r.statusLabel}"></span></td>
+                <td th:text="${r.currentActorRole}"></td>
+                <td><a class="btn btn-sm" th:href="@{'/requests/' + ${r.id}}">Xem</a></td>
+            </tr>
+            <tr th:if="${rows.isEmpty()}">
+                <td colspan="6" class="text-muted">Chua co yeu cau nao.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+</body>
+</html>

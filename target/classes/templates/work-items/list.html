@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Cong viec cho xu ly')"></head>
+<body>
+<nav th:replace="fragments/layout :: navbar"></nav>
+<div class="container">
+    <div class="alert alert-info" th:if="${infoMessage}" th:text="${infoMessage}"></div>
+    <div class="card">
+        <h2>Cong viec cho xu ly</h2>
+        <p class="text-muted">Vai tro hien hanh:
+            <b th:text="${activeRole != null ? activeRole.displayName : ''}"></b></p>
+        <table>
+            <thead>
+            <tr>
+                <th>Ma yeu cau</th>
+                <th>Loai</th>
+                <th>Nguoi lap</th>
+                <th>Don vi</th>
+                <th>He thong/CSDL</th>
+                <th>Trang thai</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${rows}">
+                <td th:text="${r.requestCode}"></td>
+                <td th:text="${r.requestType}"></td>
+                <td th:text="${r.requesterName}"></td>
+                <td th:text="${r.requesterUnit}"></td>
+                <td th:text="${r.systemName + ' / ' + r.databaseName}"></td>
+                <td><span class="badge" th:text="${r.statusLabel}"></span></td>
+                <td><a class="btn btn-sm" th:href="@{'/work-items/' + ${r.id}}">Xu ly</a></td>
+            </tr>
+            <tr th:if="${rows.isEmpty()}">
+                <td colspan="7" class="text-muted">Khong co cong viec cho xu ly.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+</body>
+</html>

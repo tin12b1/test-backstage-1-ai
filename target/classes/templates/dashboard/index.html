@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Dashboard')"></head>
+<body>
+<nav th:replace="fragments/layout :: navbar"></nav>
+<div class="container">
+
+    <div class="alert alert-info" th:if="${infoMessage}" th:text="${infoMessage}"></div>
+
+    <div class="card">
+        <h2 th:text="${view.groupTitle}">Dashboard</h2>
+        <div class="counters">
+            <div class="counter" th:each="c : ${view.counters}">
+                <div class="num" th:text="${c.value}">0</div>
+                <div class="label" th:text="${c.key}">Chi so</div>
+            </div>
+        </div>
+        <p style="margin-top:14px">
+            <a class="btn" th:href="@{/requests/new}">+ Lap yeu cau</a>
+            <a class="btn btn-secondary" th:href="@{/work-items}">Cong viec cho xu ly</a>
+            <a class="btn btn-secondary" th:href="@{/search}">Tra cuu</a>
+        </p>
+    </div>
+
+    <div class="card" th:if="${view.primaryList != null and !view.primaryList.isEmpty()}">
+        <h3 th:text="${view.primaryTitle}">Danh sach</h3>
+        <table>
+            <thead><tr><th>Ma yeu cau</th><th>Loai</th><th>Nguoi lap</th><th>He thong/CSDL</th><th>Trang thai</th><th>Dang xu ly</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${view.primaryList}">
+                <td th:text="${r.requestCode}"></td>
+                <td th:text="${r.requestType}"></td>
+                <td th:text="${r.requesterName}"></td>
+                <td th:text="${r.systemName + ' / ' + r.databaseName}"></td>
+                <td><span class="badge" th:text="${r.statusLabel}"></span></td>
+                <td th:text="${r.currentActorRole}"></td>
+                <td>
+                    <a class="btn btn-sm" th:href="@{'/work-items/' + ${r.id}}">Xu ly</a>
+                    <a class="btn btn-sm btn-secondary" th:href="@{'/requests/' + ${r.id}}">Xem</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card" th:if="${view.secondaryList != null and !view.secondaryList.isEmpty()}">
+        <h3 th:text="${view.secondaryTitle}">Danh sach</h3>
+        <table>
+            <thead><tr><th>Ma yeu cau</th><th>Loai</th><th>He thong/CSDL</th><th>Trang thai</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${view.secondaryList}">
+                <td th:text="${r.requestCode}"></td>
+                <td th:text="${r.requestType}"></td>
+                <td th:text="${r.systemName + ' / ' + r.databaseName}"></td>
+                <td><span class="badge" th:text="${r.statusLabel}"></span></td>
+                <td><a class="btn btn-sm btn-secondary" th:href="@{'/requests/' + ${r.id}}">Xem</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+</body>
+</html>

@@ -1,0 +1,68 @@
+Có 2 cách chạy. Tôi sẽ khởi động thử luôn cho bạn rồi hướng dẫn cách dùng.
+
+Background process
+
+
+Process 4: java -jar target\csdl-access-0.1.0.jar
+Command
+d:\AI Group\AI_QLTC_CSDL\csdl-access-docs-new
+
+Start-Sleep -Seconds 20
+-new> Start-Sleep -Seconds 20                                                           
+Read background process output
+
+Process 4: java -jar target\csdl-access-0.1.0.jar
+2026-06-17 14:59:05.846  INFO 29740 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-06-17 14:59:05.858  INFO 29740 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-06-17 14:59:07.080  WARN 29740 --- [           main] .s.s.UserDetailsServiceAutoConfiguration : 
+Using generated security password: 8835eb56-a803-45ec-b7b2-ceb9f16539a5
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+2026-06-17 14:59:07.266  INFO 29740 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@307e4c44, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@2a8a3ada, org.springframework.security.web.context.SecurityContextPersistenceFilter@306c7bf6, org.springframework.security.web.header.HeaderWriterFilter@4751e8b9, org.springframework.security.web.csrf.CsrfFilter@61db86bf, org.springframework.security.web.authentication.logout.LogoutFilter@4cc65c2, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@494c8f29, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@4f379769, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@500051c5, org.springframework.security.web.session.SessionManagementFilter@7b25ab31, org.springframework.security.web.access.ExceptionTranslationFilter@5eabff6b, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@6ddee60f]
+2026-06-17 14:59:08.110  INFO 29740 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2026-06-17 14:59:08.123  INFO 29740 --- [           main] com.csdl.access.CsdlAccessApplication    : Started CsdlAccessApplication in 7.003 seconds (JVM running for 8.271)
+Thinking completed
++
+Ứng dụng đã chạy thành công trên cổng 8080. Dưới đây là cách chạy thử.
+
+Cách chạy
+Có hai cách:
+
+Chạy từ file jar đã đóng gói (đang chạy sẵn cho bạn):
+java -jar target\csdl-access-0.1.0.jar
+Chạy trực tiếp bằng Maven (khi đang phát triển):
+mvn spring-boot:run
+Sau khi thấy dòng Started CsdlAccessApplication, mở trình duyệt vào:
+
+Ứng dụng: http://localhost:8080/login
+H2 console (xem dữ liệu DB): http://localhost:8080/h2-console — JDBC URL jdbc:h2:mem:csdl, user sa, password để trống.
+Tài khoản đăng nhập thử
+Mật khẩu AD giả lập cho tất cả tài khoản là password. Mã OTP/SoftOTP khi ký là 123456.
+
+Lưu ý: màn hình đăng nhập nay có thêm Mã xác nhận (captcha). Mỗi lần đăng nhập phải nhập đúng
+mã hiển thị trong ảnh (không phân biệt hoa thường). Nhập sai mã sẽ bị từ chối trước khi kiểm tra
+tài khoản AD. Bấm nút đổi mã (icon xoay vòng) bên cạnh ảnh để lấy mã khác nếu khó đọc.
+
+Tài khoản	Vai trò	Dùng để test
+requester1	Người lập yêu cầu	Lập/ký/gửi phiếu
+manager1	Trưởng phòng (+ Người lập)	Có nhiều vai trò → test màn hình chọn vai trò
+authority1	Người có thẩm quyền	Phê duyệt
+checker1	Bộ phận kiểm tra	Kiểm tra 02/05B
+access1	Bộ phận mở truy cập	Xác nhận thực hiện
+dba1	Quản trị CSDL/DBA	Xử lý 03/04A
+executor1	Người thực hiện	Chạy script 02
+admin	Quản trị hệ thống (+ Người lập)	Vào menu Cấu hình
+Luồng test nhanh (mẫu 01-YCTC)
+Đăng nhập requester1 / password (nhập thêm mã xác nhận hiển thị trong ảnh).
+Dashboard → "Lập yêu cầu" → chọn 01-YCTC.
+Nhập Ca, Hệ thống (chọn "He thong Core Kinh doanh"), CSDL, lý do, và ít nhất 1 dòng chi tiết → "Lưu nhập".
+Ở khung "Ký xác nhận", nhập OTP 123456 → "Ký xác nhận" → "Gửi phê duyệt".
+Đăng xuất, đăng nhập manager1 (chọn vai trò Trưởng phòng) → "Công việc" → mở phiếu → nhập OTP 123456 → "Ký xác nhận & chuyển tiếp".
+Đăng nhập authority1 → phê duyệt tương tự → phiếu chuyển sang bộ phận Mở truy cập.
+Đăng nhập access1 → "Công việc" → nhập OTP + thời gian thực hiện → "Xác nhận thực hiện" → phiếu Hoàn thành.
+Có thể thử "Chuyển trả" (bắt buộc nhập lý do, không cần OTP) và tra cứu/xuất Excel ở menu "Tra cứu".
+
+Lưu ý về môi trường
+Email thật sẽ báo lỗi kết nối SMTP (chưa có mail server) nhưng hệ thống vẫn lưu vào hàng đợi email_queue với trạng thái FAILED và cho retry — đúng thiết kế. Để tắt, đặt biến môi trường EMAIL_ENABLED=false.
+Mạng hiện chặn tải trực tiếp từ Maven Central (trả 503), nên tôi đã cấu hình mirror qua Google trong .mvn-settings.xml + 
+maven.config
+ (kèm bỏ qua kiểm tra SSL của proxy). Đây là workaround cho máy này; khi mạng bình thường có thể xóa hai file đó.

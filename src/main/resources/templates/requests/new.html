@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Lap yeu cau')"></head>
+<body>
+<nav th:replace="fragments/layout :: navbar"></nav>
+<div class="container">
+    <div class="card">
+        <h2>Chon mau phieu</h2>
+        <div class="counters">
+            <div class="counter" th:each="t : ${types}">
+                <div class="num" th:text="${t.formCode}">01</div>
+                <div class="label" th:text="${t.displayName}">Mo ta</div>
+                <p><a class="btn btn-sm" th:href="@{'/requests/new/' + ${t.name()}}">Lap phieu</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+</body>
+</html>

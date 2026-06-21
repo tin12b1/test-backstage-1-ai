@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${title}">Agribank - QL Truy cap CSDL</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/agribank-emblem.svg}"/>
+</head>
+<body>
+
+<!-- Header day du theo phong cach Agribank -->
+<header th:fragment="navbar">
+    <div class="topbar">
+        <div class="inner">
+            <span>He thong noi bo - Quan ly truy cap CSDL</span>
+            <span class="topbar-right">
+                <span class="tb-item">
+                    <svg class="ico ico-sm"><use th:href="@{/img/icons.svg} + '#ic-phone'"></use></svg>
+                    Hotline ho tro: 1900 558 818
+                </span>
+                <a class="tb-item" th:href="@{/dashboard}">
+                    <svg class="ico ico-sm"><use th:href="@{/img/icons.svg} + '#ic-home'"></use></svg>
+                    Trang chu
+                </a>
+            </span>
+        </div>
+    </div>
+
+    <div class="brandbar">
+        <div class="inner">
+            <img class="emblem" th:src="@{/img/agribank-emblem.svg}" alt="Agribank"/>
+            <div class="titles">
+                <div class="name">AGRIBANK</div>
+                <div class="sub">He thong Quan ly truy cap Co so du lieu</div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div class="inner">
+            <div class="menu">
+                <a th:href="@{/dashboard}">
+                    <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-grid'"></use></svg>Dashboard</a>
+                <a th:href="@{/requests/new}">
+                    <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-file-plus'"></use></svg>Lap yeu cau</a>
+                <a th:href="@{/requests}">
+                    <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-files'"></use></svg>Yeu cau cua toi</a>
+                <a th:href="@{/work-items}">
+                    <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-tasks'"></use></svg>Cong viec</a>
+                <a th:href="@{/search}">
+                    <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-search'"></use></svg>Tra cuu</a>
+                <a th:href="@{/config/users}"
+                   th:if="${currentUser != null and currentUser.activeRole != null and currentUser.activeRole.name() == 'ADMIN'}">
+                    <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-settings'"></use></svg>Cau hinh</a>
+            </div>
+            <div class="right" th:if="${currentUser != null and currentUser.authenticated}">
+                <svg class="ico ico-sm"><use th:href="@{/img/icons.svg} + '#ic-user'"></use></svg>
+                <span th:text="${currentUser.fullName}">User</span>
+                <span th:if="${currentUser.activeRole != null}"
+                      th:text="'(' + ${currentUser.activeRole.displayName} + ')'"></span>
+                <form th:action="@{/logout}" method="post" style="display:inline; margin:0">
+                    <button type="submit" class="btn btn-sm btn-gold">
+                        <svg class="ico ico-sm"><use th:href="@{/img/icons.svg} + '#ic-logout'"></use></svg>Dang xuat</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!-- Footer -->
+<footer th:fragment="footer" class="site-footer">
+    <div class="inner">
+        <div class="name">Ngan hang Nong nghiep va Phat trien Nong thon Viet Nam (Agribank)</div>
+        <div>He thong Quan ly truy cap CSDL - Phien ban demo noi bo.</div>
+    </div>
+</footer>
+
+</body>
+</html>

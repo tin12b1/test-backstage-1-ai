@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Cau hinh CSDL')"></head>
+<body>
+<nav th:replace="fragments/layout :: navbar"></nav>
+<div class="container">
+    <div class="alert alert-info" th:if="${infoMessage}" th:text="${infoMessage}"></div>
+    <div class="card">
+        <p>
+            <a class="btn btn-sm btn-secondary" th:href="@{/config/users}">Nguoi dung</a>
+            <a class="btn btn-sm btn-secondary" th:href="@{/config/units}">Don vi</a>
+            <a class="btn btn-sm btn-secondary" th:href="@{/config/systems}">He thong</a>
+            <a class="btn btn-sm" th:href="@{/config/databases}">CSDL</a>
+            <a class="btn btn-sm btn-secondary" th:href="@{/config/roles}">Vai tro/Trang thai</a>
+        </p>
+    </div>
+    <div class="card">
+        <h3>Them CSDL</h3>
+        <form th:action="@{/config/databases}" method="post"
+              style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
+            <div class="form-row" style="flex:0 0 220px; margin:0"><label>He thong</label>
+                <select name="systemId" required>
+                    <option th:each="s : ${systems}" th:value="${s.id}" th:text="${s.name}"></option>
+                </select></div>
+            <div class="form-row" style="flex:0 0 120px; margin:0"><label>Ma</label>
+                <input type="text" name="code" required/></div>
+            <div class="form-row" style="flex:1 1 200px; margin:0"><label>Ten</label>
+                <input type="text" name="name" required/></div>
+            <div class="form-row" style="flex:0 0 220px; margin:0"><label>Don vi chu quan CSDL</label>
+                <select name="ownerUnitId">
+                    <option value="">--</option>
+                    <option th:each="u : ${units}" th:value="${u.id}" th:text="${u.name}"></option>
+                </select></div>
+            <button type="submit" class="btn">Them</button>
+        </form>
+    </div>
+    <div class="card">
+        <h3>Danh sach CSDL</h3>
+        <table>
+            <thead><tr><th>Ma</th><th>Ten</th><th>He thong</th><th>Don vi chu quan</th><th>Hieu luc</th></tr></thead>
+            <tbody>
+            <tr th:each="d : ${databases}">
+                <td th:text="${d.code}"></td>
+                <td th:text="${d.name}"></td>
+                <td th:text="${lookup.systemName(d.systemId)}"></td>
+                <td th:text="${lookup.unitName(d.ownerUnitId)}"></td>
+                <td th:text="${d.active} ? 'Co' : 'Khong'"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+</body>
+</html>

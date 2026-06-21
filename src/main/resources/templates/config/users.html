@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Cau hinh nguoi dung')"></head>
+<body>
+<nav th:replace="fragments/layout :: navbar"></nav>
+<div class="container">
+    <div class="alert alert-info" th:if="${infoMessage}" th:text="${infoMessage}"></div>
+    <div class="card">
+        <p>
+            <a class="btn btn-sm" th:href="@{/config/users}">Nguoi dung</a>
+            <a class="btn btn-sm btn-secondary" th:href="@{/config/units}">Don vi</a>
+            <a class="btn btn-sm btn-secondary" th:href="@{/config/systems}">He thong</a>
+            <a class="btn btn-sm btn-secondary" th:href="@{/config/databases}">CSDL</a>
+            <a class="btn btn-sm btn-secondary" th:href="@{/config/roles}">Vai tro/Trang thai</a>
+        </p>
+    </div>
+
+    <div class="card">
+        <h3>Dang ky nguoi dung (tu AD)</h3>
+        <form th:action="@{/config/users}" method="post"
+              style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
+            <div class="form-row" style="flex:0 0 220px; margin:0"><label>Tai khoan AD</label>
+                <input type="text" name="username" required/></div>
+            <div class="form-row" style="flex:0 0 220px; margin:0"><label>Don vi</label>
+                <select name="unitId">
+                    <option value="">--</option>
+                    <option th:each="u : ${units}" th:value="${u.id}" th:text="${u.name}"></option>
+                </select></div>
+            <button type="submit" class="btn">Dang ky</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Danh sach nguoi dung</h3>
+        <table>
+            <thead><tr><th>Tai khoan</th><th>Ho ten</th><th>Email</th><th>Vai tro</th><th>Trang thai</th><th>Gan vai tro</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="u : ${users}">
+                <td th:text="${u.username}"></td>
+                <td th:text="${u.fullName}"></td>
+                <td th:text="${u.email}"></td>
+                <td th:text="${rolesByUser.containsKey(u.id)} ? ${#strings.listJoin(rolesByUser.get(u.id), ', ')} : ''"></td>
+                <td th:text="${u.status}"></td>
+                <td>
+                    <form th:action="@{'/config/users/' + ${u.id} + '/assign-role'}" method="post"
+                          style="display:flex; gap:6px">
+                        <select name="roleCode">
+                            <option th:each="r : ${roles}" th:value="${r.name()}" th:text="${r.name()}"></option>
+                        </select>
+                        <select name="unitId">
+                            <option value="">(toan bo)</option>
+                            <option th:each="un : ${units}" th:value="${un.id}" th:text="${un.code}"></option>
+                        </select>
+                        <button type="submit" class="btn btn-sm">Gan</button>
+                    </form>
+                </td>
+                <td>
+                    <form th:action="@{'/config/users/' + ${u.id} + '/disable'}" method="post"
+                          onsubmit="return confirm('Khoa nguoi dung nay?');">
+                        <button type="submit" class="btn btn-sm btn-danger">Khoa</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+</body>
+</html>
