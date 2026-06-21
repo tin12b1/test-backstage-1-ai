@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Tra cuu yeu cau')"></head>
+<body>
+<nav th:replace="fragments/layout :: navbar"></nav>
+<div class="container">
+    <div class="card">
+        <h2>Tra cuu yeu cau</h2>
+        <form th:action="@{/search}" method="get" th:object="${criteria}">
+            <div style="display:flex; gap:12px; flex-wrap:wrap">
+                <div class="form-row" style="flex:1 1 160px"><label>Tu ngay</label>
+                    <input type="date" th:field="*{fromDate}"/></div>
+                <div class="form-row" style="flex:1 1 160px"><label>Den ngay</label>
+                    <input type="date" th:field="*{toDate}"/></div>
+                <div class="form-row" style="flex:1 1 180px"><label>Trang thai</label>
+                    <select th:field="*{status}">
+                        <option value="">Tat ca</option>
+                        <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.displayName}"></option>
+                    </select></div>
+                <div class="form-row" style="flex:1 1 180px"><label>Loai yeu cau</label>
+                    <select th:field="*{requestType}">
+                        <option value="">Tat ca</option>
+                        <option th:each="t : ${types}" th:value="${t.name()}" th:text="${t.displayName}"></option>
+                    </select></div>
+                <div class="form-row" style="flex:1 1 180px"><label>Don vi</label>
+                    <select th:field="*{unitId}">
+                        <option value="">Tat ca</option>
+                        <option th:each="u : ${units}" th:value="${u.id}" th:text="${u.name}"></option>
+                    </select></div>
+                <div class="form-row" style="flex:1 1 180px"><label>He thong</label>
+                    <select th:field="*{systemId}">
+                        <option value="">Tat ca</option>
+                        <option th:each="s : ${systems}" th:value="${s.id}" th:text="${s.name}"></option>
+                    </select></div>
+                <div class="form-row" style="flex:1 1 180px"><label>CSDL</label>
+                    <select th:field="*{databaseId}">
+                        <option value="">Tat ca</option>
+                        <option th:each="db : ${databases}" th:value="${db.id}" th:text="${db.name}"></option>
+                    </select></div>
+                <div class="form-row" style="flex:1 1 180px"><label>Ma yeu cau</label>
+                    <input type="text" th:field="*{requestCode}"/></div>
+            </div>
+            <button type="submit" class="btn">Tim kiem</button>
+            <a class="btn btn-success"
+               th:href="@{/reports/export(fromDate=*{fromDate},toDate=*{toDate},status=*{status},requestType=*{requestType},unitId=*{unitId},systemId=*{systemId},databaseId=*{databaseId},requestCode=*{requestCode})}">
+                Xuat Excel</a>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Ket qua (<span th:text="${rows.size()}">0</span>)</h3>
+        <table>
+            <thead>
+            <tr><th>Ma yeu cau</th><th>Loai</th><th>Nguoi lap</th><th>Don vi</th><th>He thong/CSDL</th><th>Trang thai</th><th>Dang xu ly</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${rows}">
+                <td th:text="${r.requestCode}"></td>
+                <td th:text="${r.requestType}"></td>
+                <td th:text="${r.requesterName}"></td>
+                <td th:text="${r.requesterUnit}"></td>
+                <td th:text="${r.systemName + ' / ' + r.databaseName}"></td>
+                <td><span class="badge" th:text="${r.statusLabel}"></span></td>
+                <td th:text="${r.currentActorRole}"></td>
+                <td><a class="btn btn-sm btn-secondary" th:href="@{'/requests/' + ${r.id}}">Xem</a></td>
+            </tr>
+            <tr th:if="${rows.isEmpty()}"><td colspan="8" class="text-muted">Khong co ket qua.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+</body>
+</html>

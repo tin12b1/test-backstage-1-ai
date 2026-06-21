@@ -1,0 +1,48 @@
+- Clone thư mục cho main
+D:\AI Group>cd Projects
+D:\AI Group\Projects>git clone https://github.com/manhcuong07/he-thong-quan-tri-csdl.git ql-truy-cap-csdl-main
+Cloning into 'ql-truy-cap-csdl-main'...
+- Checkout nhánh main
+D:\AI Group\Projects>cd ql-truy-cap-csdl-main
+D:\AI Group\Projects\ql-truy-cap-csdl-main>git checkout main
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+D:\AI Group\Projects\ql-truy-cap-csdl-main>git pull origin main
+From https://github.com/manhcuong07/he-thong-quan-tri-csdl
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+
+- Clone thêm thư mục cho Dev
+D:\AI Group\Projects>git clone https://github.com/manhcuong07/he-thong-quan-tri-csdl.git ql-truy-cap-csdl-dev
+Cloning into 'ql-truy-cap-csdl-dev'...
+- Checkout nhánh Dev
+
+* Hàng ngày làm việc trên nhánh Dev, trước khi code làm việc sau:
+D:\AI Group\Projects>cd ql-truy-cap-csdl-dev
+D:\AI Group\Projects\ql-truy-cap-csdl-dev>git checkout Dev
+D:\AI Group\Projects\ql-truy-cap-csdl-dev>git pull origin Dev
+
+* Code xong đẩy code nhánh Dev lên GitHub
+Ở thư mục local của nhánh Dev, chạy:
+git status
+Nếu có file mới hoặc file sửa, commit trước:
+git add .
+git commit -m "Update files on Dev branch"
+Sau đó push lên GitHub:
+git push origin Dev
+* Tạo Pull Request trên GitHub
+Vào repo trên GitHub → tab Pull requests → bấm New pull request.
+Chọn:
+base: main
+compare: Dev
+Sau đó bấm:
+Create pull request
+* Kiểm tra file thay đổi
+GitHub sẽ hiện các file sẽ được merge.
+Bạn kiểm tra tab: Files changed
+Nếu đúng file cần đưa sang main, bấm:Create pull request
+Sau đó có thể đặt tiêu đề:Merge Dev changes into main và mô tả nội dung
+* Merge sang nhánh main
+Sau khi kiểm tra không có conflict, bấm: Merge pull request
+Rồi bấm: Confirm merge
+Lúc này code từ Dev đã được merge sang main.

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Chi tiet yeu cau')"></head>
+<body>
+<nav th:replace="fragments/layout :: navbar"></nav>
+<div class="container">
+
+    <div class="alert alert-info" th:if="${infoMessage}" th:text="${infoMessage}"></div>
+
+    <div class="card">
+        <h2 th:text="'Yeu cau ' + ${request.requestCode}">Yeu cau</h2>
+        <table>
+            <tr><th style="width:220px">Loai yeu cau</th><td th:text="${row.requestType}"></td></tr>
+            <tr><th>Nguoi lap</th><td th:text="${row.requesterName}"></td></tr>
+            <tr><th>Don vi yeu cau</th><td th:text="${row.requesterUnit}"></td></tr>
+            <tr><th>He thong / CSDL</th><td th:text="${row.systemName + ' / ' + row.databaseName}"></td></tr>
+            <tr><th>Thoi gian truy cap</th>
+                <td th:text="${row.startTime} + ' - ' + ${row.endTime}"></td></tr>
+            <tr><th>Ly do</th><td th:text="${request.reason}"></td></tr>
+            <tr><th>Trang thai</th><td><span class="badge" th:text="${row.statusLabel}"></span></td></tr>
+            <tr><th>Dang xu ly (vai tro)</th><td th:text="${request.currentActorRole}"></td></tr>
+        </table>
+
+        <div class="grid-actions">
+            <a class="btn btn-secondary" th:href="@{/requests}">Danh sach cua toi</a>
+            <a class="btn" th:if="${isOwner and request.status.editable}"
+               th:href="@{'/requests/' + ${request.id} + '/edit'}">Sua / Ky / Gui</a>
+            <form th:if="${isOwner and request.status.name() == 'SEND_FAILED'}" style="display:inline"
+                  th:action="@{'/requests/' + ${request.id} + '/resend'}" method="post">
+                <button class="btn" type="submit">Gui lai</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card" th:if="${!details.isEmpty()}">
+        <h3>Chi tiet</h3>
+        <table>
+            <thead>
+            <tr><th>CSDL</th><th>Owner</th><th>Doi tuong</th><th>Nguoi su dung</th><th>Quyen</th><th>QueryAll</th><th>Muc dich</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="d : ${details}">
+                <td th:text="${lookup.databaseName(d.databaseId)}"></td>
+                <td th:text="${d.objectOwner}"></td>
+                <td th:text="${d.objectName}"></td>
+                <td th:text="${lookup.userName(d.targetUserId)}"></td>
+                <td th:text="${d.accessRights}"></td>
+                <td th:text="${d.queryAll} ? 'Co' : ''"></td>
+                <td th:text="${d.purpose}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Luong xu ly</h3>
+        <table>
+            <thead>
+            <tr><th>Thoi gian</th><th>Vai tro</th><th>Hanh dong</th><th>Tu -> Den</th><th>Noi dung</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="h : ${history}">
+                <td th:text="${#temporals.format(h.processedAt, 'dd/MM/yyyy HH:mm')}"></td>
+                <td th:text="${h.actorRoleCode}"></td>
+                <td th:text="${h.action}"></td>
+                <td th:text="${h.fromStatus} + ' -> ' + ${h.toStatus}"></td>
+                <td th:text="${h.comment}"></td>
+            </tr>
+            <tr th:if="${history.isEmpty()}"><td colspan="5" class="text-muted">Chua co buoc xu ly.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Chu ky xac nhan</h3>
+        <table>
+            <thead>
+            <tr><th>Nguoi ky</th><th>Vai tro</th><th>Pham vi</th><th>Thoi gian</th><th>Ket qua</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${signatures}">
+                <td th:text="${lookup.userName(s.signerUserId)}"></td>
+                <td th:text="${s.signerRoleCode}"></td>
+                <td th:text="${s.signingScope}"></td>
+                <td th:text="${#temporals.format(s.signedAt, 'dd/MM/yyyy HH:mm')}"></td>
+                <td th:text="${s.result}"></td>
+            </tr>
+            <tr th:if="${signatures.isEmpty()}"><td colspan="5" class="text-muted">Chua co chu ky.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+</body>
+</html>
