@@ -1,48 +1,137 @@
-- Clone thư mục cho main
-D:\AI Group>cd Projects
-D:\AI Group\Projects>git clone https://github.com/manhcuong07/he-thong-quan-tri-csdl.git ql-truy-cap-csdl-main
-Cloning into 'ql-truy-cap-csdl-main'...
-- Checkout nhánh main
-D:\AI Group\Projects>cd ql-truy-cap-csdl-main
-D:\AI Group\Projects\ql-truy-cap-csdl-main>git checkout main
-Already on 'main'
-Your branch is up to date with 'origin/main'.
-D:\AI Group\Projects\ql-truy-cap-csdl-main>git pull origin main
-From https://github.com/manhcuong07/he-thong-quan-tri-csdl
- * branch            main       -> FETCH_HEAD
-Already up to date.
+* Tin làm nhánh request-create 
+git checkout request-create
+git pull origin request-create
 
-- Clone thêm thư mục cho Dev
-D:\AI Group\Projects>git clone https://github.com/manhcuong07/he-thong-quan-tri-csdl.git ql-truy-cap-csdl-dev
-Cloning into 'ql-truy-cap-csdl-dev'...
-- Checkout nhánh Dev
+Code xong:
 
-* Hàng ngày làm việc trên nhánh Dev, trước khi code làm việc sau:
-D:\AI Group\Projects>cd ql-truy-cap-csdl-dev
-D:\AI Group\Projects\ql-truy-cap-csdl-dev>git checkout Dev
-D:\AI Group\Projects\ql-truy-cap-csdl-dev>git pull origin Dev
-
-* Code xong đẩy code nhánh Dev lên GitHub
-Ở thư mục local của nhánh Dev, chạy:
 git status
-Nếu có file mới hoặc file sửa, commit trước:
 git add .
-git commit -m "Update files on Dev branch"
-Sau đó push lên GitHub:
-git push origin Dev
-* Tạo Pull Request trên GitHub
-Vào repo trên GitHub → tab Pull requests → bấm New pull request.
-Chọn:
+git commit -m "Add request create function"
+git push origin request-create
+Sau đó lên GitHub tạo Pull Request:
+
+base: dev
+compare: request-create
+
+* Quang làm nhánh approval-processing 
+git checkout approval-processing
+git pull origin approval-processing
+
+Code xong:
+
+git status
+git add .
+git commit -m "Add approval processing function"
+git push origin approval-processing
+
+Tạo Pull Request:
+
+base: dev
+compare: approval-processing
+
+* Khương làm nhánh dashboard-config
+git checkout dashboard-config
+git pull origin dashboard-config
+
+Code xong:
+
+git status
+git add .
+git commit -m "Add dashboard config function"
+git push origin dashboard-config
+Tạo Pull Request:
+
+base: dev
+compare: dashboard-config
+
+* Admin merge các nhánh chức năng vào dev
+
+Admin vào GitHub:
+
+Pull requests
+
+Kiểm tra từng PR:
+
+request-create → dev
+approval-processing → dev
+dashboard-config → dev
+integration → dev
+
+Với từng PR:
+1. Xem tab Files changed
+2. Kiểm tra conflict
+3. Review code
+4. Bấm Merge pull request
+5. Confirm merge
+Sau đó nhánh dev sẽ có code tổng hợp.
+
+* Admin merge dev vào main
+
+Khi code trên dev đã ổn định, Admin tạo PR:
+
 base: main
-compare: Dev
-Sau đó bấm:
-Create pull request
-* Kiểm tra file thay đổi
-GitHub sẽ hiện các file sẽ được merge.
-Bạn kiểm tra tab: Files changed
-Nếu đúng file cần đưa sang main, bấm:Create pull request
-Sau đó có thể đặt tiêu đề:Merge Dev changes into main và mô tả nội dung
-* Merge sang nhánh main
-Sau khi kiểm tra không có conflict, bấm: Merge pull request
-Rồi bấm: Confirm merge
-Lúc này code từ Dev đã được merge sang main.
+compare: dev
+
+Tiêu đề:
+
+Merge dev into main for release
+
+Mô tả:
+
+Nội dung:
+- Tổng hợp chức năng tạo yêu cầu
+- Tổng hợp chức năng xử lý phê duyệt
+- Tổng hợp dashboard/cấu hình
+- Tổng hợp phần tích hợp
+
+Kiểm tra xong thì Admin bấm:
+Merge pull request
+Confirm merge
+* Quy trình hằng ngày cho cả nhóm
+
+1. Checkout đúng nhánh của mình
+2. Pull code mới nhất
+3. Code
+4. Commit
+5. Push lên nhánh của mình
+6. Tạo Pull Request vào dev
+
+Merge code từ dev sang từng nhánh thành viên
+
+Bạn làm trên máy của Admin.
+
+Bước 1: Cập nhật nhánh dev mới nhất
+git checkout dev
+git pull origin dev
+
+Nếu có code mới chưa đẩy lên GitHub thì đẩy trước:
+
+git status
+git add .
+git commit -m "Update base code on dev"
+git push origin dev
+
+Nếu git status báo sạch thì không cần add/commit.
+
+Bước 2: Đưa code từ dev sang nhánh request-create
+git checkout request-create
+git pull origin request-create
+git merge dev
+git push origin request-create
+
+Ý nghĩa:
+
+checkout request-create  : chuyển sang nhánh của thành viên
+pull origin request-create : lấy code mới nhất của nhánh đó
+merge dev                : đưa code từ dev sang nhánh này
+push origin request-create : đẩy kết quả lên GitHub
+Bước 3: Đưa code từ dev sang nhánh approval-processing
+git checkout approval-processing
+git pull origin approval-processing
+git merge dev
+git push origin approval-processing
+Bước 4: Đưa code từ dev sang nhánh dashboard-config
+git checkout dashboard-config
+git pull origin dashboard-config
+git merge dev
+git push origin dashboard-config
