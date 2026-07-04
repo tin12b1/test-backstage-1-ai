@@ -47,15 +47,22 @@ public class EsbAdClient implements AdClient {
 
     private static final Logger log = LoggerFactory.getLogger(EsbAdClient.class);
 
+    /** Namespace phan Header dung chung tren truc (common header). */
     private static final String NS_HEADER = "http://www.agribank.com.vn/common/envelope/commonheader/1";
+    /** Namespace phan nghiep vu xac thuc. */
     private static final String NS_AUTHEN = "http://www.agribank.com.vn/entity/vn/authen/authensvcs/1";
+    /** Namespace SOAP 1.1 Envelope. */
+    private static final String NS_SOAPENV = "http://schemas.xmlsoap.org/soap/envelope/";
 
+    /** URL endpoint cua dich vu SOAP tren truc. */
     @Value("${integration.ad.esb.endpoint}")
     private String endpoint;
 
+    /** Ma ung dung nguon (SourceAppID) khai bao voi truc. */
     @Value("${integration.ad.esb.source-app-id:EBANK}")
     private String sourceAppId;
 
+    /** UserId cap ung dung dung de dang nhap truc (khac voi user AD can xac thuc). */
     @Value("${integration.ad.esb.service-user-id:EBANK}")
     private String serviceUserId;
 
@@ -63,9 +70,11 @@ public class EsbAdClient implements AdClient {
     @Value("${integration.ad.esb.service-password:}")
     private String servicePassword;
 
+    /** Ma ham nghiep vu (FunctionCode) xac dinh dich vu VerifyUserAD tren truc. */
     @Value("${integration.ad.esb.function-code:AUTH-AUTHENADUSER-LDAP-AD}")
     private String functionCode;
 
+    /** Phien ban dich vu khai bao trong Header. */
     @Value("${integration.ad.esb.service-version:1}")
     private String serviceVersion;
 
@@ -77,14 +86,18 @@ public class EsbAdClient implements AdClient {
     @Value("${integration.ad.esb.soap-action:}")
     private String soapAction;
 
+    /** Thoi gian cho ket noi (ms). */
     @Value("${integration.ad.esb.connect-timeout-ms:5000}")
     private int connectTimeoutMs;
 
+    /** Thoi gian cho doc phan hoi (ms). */
     @Value("${integration.ad.esb.read-timeout-ms:10000}")
     private int readTimeoutMs;
 
+    /** RestTemplate dung chung, khoi tao lazy voi timeout da cau hinh. */
     private RestTemplate restTemplate;
 
+    /** Tra ve RestTemplate da cau hinh timeout; khoi tao lan dau khi can dung. */
     private RestTemplate restTemplate() {
         if (restTemplate == null) {
             SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -97,14 +110,17 @@ public class EsbAdClient implements AdClient {
 
     @Override
     public AdAuthResult authenticate(String username, String password) {
+        // Kiem tra dau vao truoc khi goi truc de tranh goi thua.
         if (username == null || username.isBlank() || password == null || password.isEmpty()) {
             return AdAuthResult.of(AdAuthResult.Status.BAD_CREDENTIALS, "Thieu thong tin dang nhap");
         }
 
+        // Ghep domain (neu can) va dung XML request SOAP.
         String principal = buildPrincipal(username);
         String requestXml = buildRequest(principal, password);
 
         try {
+            // Chuan bi header SOAP (text/xml, SOAPAction neu co) va goi POST toi endpoint.
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.TEXT_XML);
             if (soapAction != null && !soapAction.isBlank()) {
@@ -139,6 +155,10 @@ public class EsbAdClient implements AdClient {
         return profile;
     }
 
+    /**
+     * Ghep domain prefix vao username khi can (vi du {@code CORP\\username}).
+     * Giu nguyen neu username da co domain (chua "\\" hoac "@") hoac neu khong cau hinh domain.
+     */
     private String buildPrincipal(String username) {
         if (domain == null || domain.isBlank()) {
             return username;
@@ -149,13 +169,23 @@ public class EsbAdClient implements AdClient {
         return domain + "\\" + username;
     }
 
+    /**
+     * Dung chuoi XML request SOAP cho VerifyUserAD.
+     * Sinh MessageId/TransactionId/Timestamp, ma hoa hexa mat khau he thong (UserPassword),
+     * dat UserName (co domain) va Password can xac thuc trong BodyReq.
+     */
     private String buildRequest(String principal, String password) {
         String messageId = UUID.randomUUID().toString();
         String transactionId = String.valueOf(System.currentTimeMillis());
         String timestamp = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        // Ma hoa hexa mat khau he thong theo dinh dang bang tin yeu cau.
         String passwordHex = toHex(servicePassword);
 
         StringBuilder sb = new StringBuilder();
+        // Boc trong SOAP 1.1 Envelope (truc IBM/Axis2 yeu cau Envelope/Body).
+        sb.append("<soapenv:Envelope xmlns:soapenv=\"").append(NS_SOAPENV).append("\">");
+        sb.append("<soapenv:Header/>");
+        sb.append("<soapenv:Body>");
         sb.append("<ns3:VerifyUserADReq xmlns:ns2=\"").append(NS_HEADER)
                 .append("\" xmlns:ns3=\"").append(NS_AUTHEN).append("\">");
         sb.append("<ns2:Header>");
@@ -180,6 +210,8 @@ public class EsbAdClient implements AdClient {
         sb.append("<Password>").append(xml(password)).append("</Password>");
         sb.append("</BodyReq>");
         sb.append("</ns3:VerifyUserADReq>");
+        sb.append("</soapenv:Body>");
+        sb.append("</soapenv:Envelope>");
         return sb.toString();
     }
 
@@ -215,6 +247,7 @@ public class EsbAdClient implements AdClient {
 
             boolean businessOk = "0".equals(trim(result));
             if (businessOk) {
+                log.info("[ESB-AD] Xac thuc thanh cong user={}", username);
                 return AdAuthResult.success();
             }
             return mapBusinessError(result, description, username);

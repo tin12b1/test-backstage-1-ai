@@ -3,16 +3,23 @@ package com.csdl.access.integration.ad;
 /** Thong tin nguoi dung lay tu AD. */
 public class AdUserProfile {
 
+    /** Ten dang nhap tren AD. */
     private String username;
+    /** Ho ten day du. */
     private String fullName;
+    /** Dia chi email. */
     private String email;
+    /** So dien thoai di dong. */
     private String mobile;
+    /** Don vi (chi nhanh/trung tam) neu AD co tra ve. */
     private String unit;
+    /** Phong/ban neu AD co tra ve. */
     private String department;
 
     public AdUserProfile() {
     }
 
+    /** Khoi tao voi cac thong tin co ban thuong dung nhat. */
     public AdUserProfile(String username, String fullName, String email, String mobile) {
         this.username = username;
         this.fullName = fullName;

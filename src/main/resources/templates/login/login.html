@@ -1,55 +1,55 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="fragments/layout :: head('Dang nhap - Agribank QL Truy cap CSDL')"></head>
+<head th:replace="fragments/layout :: head('Đăng nhập - Agribank QL Truy cập CSDL')"></head>
 <body>
 <div class="auth-bg">
     <div class="auth-card">
         <div class="head">
             <img class="emblem" th:src="@{/img/agribank-emblem.svg}" alt="Agribank"/>
             <div class="name">AGRIBANK</div>
-            <div class="sub">He thong Quan ly truy cap Co so du lieu</div>
+            <div class="sub">Hệ thống Quản lý truy cập Cơ sở dữ liệu</div>
         </div>
         <div class="body">
-            <h3 style="margin-top:0">Dang nhap he thong</h3>
+            <h3 style="margin-top:0">Đăng nhập hệ thống</h3>
 
             <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
             <div class="alert alert-info" th:if="${infoMessage}" th:text="${infoMessage}"></div>
 
             <form th:action="@{/login}" method="post">
                 <div class="form-row">
-                    <label for="username">Tai khoan AD</label>
+                    <label for="username">Tài khoản AD</label>
                     <div class="input-ico">
                         <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-user'"></use></svg>
                         <input type="text" id="username" name="username" required autofocus/>
                     </div>
                 </div>
                 <div class="form-row">
-                    <label for="password">Mat khau</label>
+                    <label for="password">Mật khẩu</label>
                     <div class="input-ico">
                         <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-lock'"></use></svg>
                         <input type="password" id="password" name="password" required/>
                     </div>
                 </div>
                 <div class="form-row">
-                    <label for="captcha">Ma xac nhan</label>
+                    <label for="captcha">Mã xác nhận</label>
                     <div class="captcha-row">
                         <div class="input-ico">
                             <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-shield'"></use></svg>
                             <input type="text" id="captcha" name="captcha" autocomplete="off"
                                    maxlength="6" required/>
                         </div>
-                        <img id="captchaImg" class="captcha-img" th:src="@{/captcha}" alt="Ma xac nhan"/>
+                        <img id="captchaImg" class="captcha-img" th:src="@{/captcha}" alt="Mã xác nhận"/>
                         <button type="button" class="btn btn-sm btn-secondary captcha-reload"
-                                title="Doi ma khac" onclick="reloadCaptcha()">
+                                title="Đổi mã khác" onclick="reloadCaptcha()">
                             <svg class="ico ico-sm"><use th:href="@{/img/icons.svg} + '#ic-refresh'"></use></svg>
                         </button>
                     </div>
                 </div>
                 <button type="submit" class="btn" style="width:100%">
-                    <svg class="ico ico-sm"><use th:href="@{/img/icons.svg} + '#ic-login'"></use></svg>Dang nhap</button>
+                    <svg class="ico ico-sm"><use th:href="@{/img/icons.svg} + '#ic-login'"></use></svg>Đăng nhập</button>
             </form>
             <p class="text-muted" style="text-align:center; margin-bottom:0">
-                Su dung tai khoan AD do don vi cap.
+                Sử dụng tài khoản AD do đơn vị cấp.
             </p>
         </div>
     </div>

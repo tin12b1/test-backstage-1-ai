@@ -17,23 +17,34 @@ import java.util.List;
 @SessionScope(proxyMode = ScopedProxyMode.TARGET_CLASS)
 public class UserSession implements Serializable {
 
+    // Id nguoi dung
     private Long userId;
+    // Ten dang nhap
     private String username;
+    // Ho ten day du
     private String fullName;
+    // Dia chi email
     private String email;
+    // Id don vi
     private Long unitId;
+    // Id phong ban
     private Long departmentId;
+    // Danh sach vai tro nguoi dung duoc gan
     private final List<RoleCode> availableRoles = new ArrayList<>();
+    // Vai tro dang lam viec (quyet dinh menu/du lieu)
     private RoleCode activeRole;
 
+    /** Da dang nhap khi da co ten dang nhap trong phien. */
     public boolean isAuthenticated() {
         return username != null;
     }
 
+    /** Co nhieu hon mot vai tro (can chon vai tro lam viec). */
     public boolean hasMultipleRoles() {
         return availableRoles.size() > 1;
     }
 
+    /** Xoa toan bo trang thai phien (dung khi dang nhap lai/dang xuat). */
     public void reset() {
         userId = null;
         username = null;

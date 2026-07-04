@@ -2,6 +2,12 @@
 
 > Đây là mô hình dữ liệu logic phục vụ phát triển ban đầu. Khi thiết kế vật lý cần bổ sung kiểu dữ liệu cụ thể, index, sequence, constraint và quy ước đặt tên theo chuẩn dự án.
 
+> **DDL Oracle vật lý:** thư mục `src/main/resources/db/oracle/` gồm `V0__drop.sql` (drop an toàn),
+> `V1__schema.sql` (tạo mới 23 bảng), `V3__seed_catalog.sql` (seed danh mục/người dùng/phân quyền),
+> và `V2__04b_bgtk_columns.sql` (vá cột 04B-BGTK cho schema cũ). Cài mới chạy V0 → V1 → V3.
+> Kiểu cột đã khớp entity JPA (`Long`→`NUMBER(19,0)`, `Integer`→`NUMBER(10,0)`, `boolean`→`NUMBER(1,0)`,
+> `String(n)`→`VARCHAR2(n CHAR)`, `LocalDateTime`→`TIMESTAMP`, `LocalDate`→`DATE`, `@Lob`→`CLOB`/`BLOB`).
+
 ## 1. Danh mục chính
 
 ### `app_user`
@@ -50,6 +56,7 @@ Gán nhiều vai trò cho một user.
 | user_id | Người dùng |
 | role_id | Vai trò |
 | unit_id | Phạm vi đơn vị nếu có |
+| department_id | Phạm vi phòng/bộ phận nếu có (gán Trưởng phòng/Người có thẩm quyền theo phòng) |
 | system_id | Phạm vi hệ thống nếu có |
 | database_id | Phạm vi CSDL nếu có |
 | active | Hiệu lực |
@@ -65,9 +72,10 @@ Danh mục hệ thống thông tin.
 | Cột | Mô tả |
 |---|---|
 | id | Khóa chính |
-| code | Mã hệ thống |
+| code | Ký hiệu đơn vị/hệ thống (dạng mã ASCII, ví dụ `TTCNTT-NHDT-ARS`) |
 | name | Tên hệ thống |
 | owner_unit_id | Đơn vị chủ quản ứng dụng |
+| owner_department_id | Phòng/bộ phận chủ quản ứng dụng |
 | active | Hiệu lực |
 
 ### `database_catalog`
@@ -94,6 +102,20 @@ Danh mục quyền truy cập/truy xuất.
 | name | Tên quyền |
 | active | Hiệu lực |
 
+### `work_shift`
+
+Danh mục ca làm việc/truy cập (Ca 1: 0-8h, Ca 2: 8-20h, Ca 3: 20-24h).
+
+| Cột | Mô tả |
+|---|---|
+| id | Khóa chính |
+| shift_no | Số thứ tự ca (1, 2, 3), duy nhất |
+| name | Tên hiển thị, ví dụ "Ca 1" |
+| start_hour | Giờ bắt đầu (0-23) |
+| end_hour | Giờ kết thúc (1-24) |
+| label | Nhãn khung giờ, ví dụ "0-8h" |
+| active | Hiệu lực |
+
 ## 2. Bảng yêu cầu
 
 ### `access_request`
@@ -103,22 +125,32 @@ Bảng header của phiếu yêu cầu.
 | Cột | Mô tả |
 |---|---|
 | id | Khóa chính |
-| request_code | Mã yêu cầu, ví dụ `KýhiệuĐV_NgàyThángNăm_SốTT` |
-| request_type | Loại phiếu: 01/02/03/04A/05A/05B |
+| request_code | Mã yêu cầu. 01-YCTC: `MãĐơnVị_MãPhòng_yyyyMMddHHmmss`; mẫu có chọn hệ thống (02/05A/05B): `KýhiệuHệThống_yyyyMMddHHmmss` |
+| request_type | Loại phiếu: 01/02/03/04A/04B/05A/05B |
 | status | Trạng thái hiện tại |
 | requester_user_id | Người lập |
 | requester_unit_id | Đơn vị yêu cầu |
 | requester_department_id | Phòng/bộ phận |
 | shift_no | Ca 1/2/3 |
 | access_no | Lần 1/2/3/4/5 |
+| system_id | Hệ thống (dùng cho 02/05A/05B; 01-YCTC chọn theo từng dòng chi tiết) |
+| database_id | CSDL (dùng cho 02/05A/05B) |
 | start_time | Thời gian bắt đầu |
 | end_time | Thời gian kết thúc |
 | expected_execution_date | Ngày thực hiện dự kiến, dùng cho 03-YCCT |
 | reason | Lý do/mục đích |
+| receiver_user_id | 04B-BGTK: người nhận bàn giao tài khoản |
+| handover_manager_id | 04B-BGTK: lãnh đạo phòng phụ trách người bàn giao |
+| receiver_manager_id | 04B-BGTK: lãnh đạo phòng phụ trách người nhận bàn giao |
+| source_request_id | 04B-BGTK: phiếu 04A-YCTK được liên kết bàn giao |
 | current_actor_type | USER/ROLE/UNIT/TEAM |
 | current_actor_id | Người/bộ phận đang xử lý |
+| current_actor_role | Vai trò đang xử lý (tham chiếu nhanh khi actor là ROLE/TEAM) |
+| current_step_code | Mã bước workflow hiện tại |
+| current_unit_id | Đơn vị chịu trách nhiệm ở bước hiện tại |
 | owner_unit_id | Đơn vị chủ quản ứng dụng nếu xác định được |
 | owner_db_unit_id | Đơn vị chủ quản CSDL nếu xác định được |
+| at_requester_phase | Đang ở giai đoạn của đơn vị yêu cầu (true) hay đơn vị chủ quản (false) |
 | created_at | Ngày lập |
 | submitted_at | Ngày gửi |
 | approved_at | Ngày phê duyệt |
@@ -142,6 +174,7 @@ Dòng chi tiết dùng cho các mẫu có danh sách chi tiết như 01-YCTC, 04
 | account_owner_name | Chủ tài khoản, dùng cho 04A |
 | account_type | Truy cập/Chỉnh sửa |
 | account_action | Cấp mới/Đổi thuộc tính |
+| scope | 04B-BGTK: phạm vi bàn giao (Toàn bộ/Theo hệ thống/Theo CSDL/Theo đối tượng) |
 | access_rights | Quyền truy cập dạng mã hoặc JSON |
 | query_all | Có chọn QueryAll không |
 | purpose | Mục đích/lý do dòng chi tiết |
@@ -185,6 +218,24 @@ Liên kết phiếu 05B-HTKC với phiếu 05A-YCKC.
 | completion_request_id | Phiếu 05B |
 | created_at | Thời gian liên kết |
 
+### `access_registration`
+
+Bảng dữ liệu đăng ký chi tiết từ màn hình 01YCTC_Dangky. Nút "Lấy dữ liệu đã đăng ký" trên màn lập yêu cầu 01-YCTC quét/nạp lại các bản ghi này thành dòng chi tiết.
+
+| Cột | Mô tả |
+|---|---|
+| id | Khóa chính |
+| requester_user_id | Người đăng ký (app_user.id) |
+| system_id | Hệ thống thông tin |
+| database_id | CSDL |
+| object_name | Tên đối tượng (mặc định "All Schema") |
+| access_rights | CSV mã quyền, ví dụ `SELECT,INSERT,UPDATE,DELETE` |
+| shift_no | Ca (1/2/3) |
+| from_date | Từ ngày |
+| to_date | Đến ngày |
+| signed | Đã ký OTP tại mục chi tiết hay chưa |
+| created_at | Thời điểm đăng ký |
+
 ## 3. Workflow và ký xác nhận
 
 ### `workflow_history`
@@ -216,6 +267,17 @@ Liên kết phiếu 05B-HTKC với phiếu 05A-YCKC.
 | signed_at | Thời gian ký |
 | signature_image_id | Ảnh chữ ký hiển thị |
 | result | SUCCESS/FAILED |
+
+### `signature_image`
+
+Ảnh chữ ký khai báo của người dùng (tham chiếu bởi `app_user.signature_image_id` và `request_signature.signature_image_id`).
+
+| Cột | Mô tả |
+|---|---|
+| id | Khóa chính |
+| user_id | Người dùng sở hữu chữ ký |
+| content_type | Kiểu MIME của ảnh (ví dụ image/png) |
+| data | Dữ liệu ảnh (BLOB) |
 
 ### `work_log_07`
 
@@ -249,6 +311,19 @@ Hàng đợi gửi email.
 ### `otp_transaction`
 
 Lưu giao dịch xác thực OTP/SoftOTP.
+
+### `user_totp`
+
+Bí mật Google Authenticator (TOTP) của người dùng — dùng để ký xác nhận thay SoftOTP.
+
+| Cột | Mô tả |
+|---|---|
+| id | Khóa chính |
+| user_id | Người dùng (duy nhất) |
+| secret | Bí mật dạng Base32 (chia sẻ với app Authenticator) |
+| enabled | Đã xác nhận và đang hiệu lực |
+| created_at | Thời điểm tạo/đăng ký |
+| confirmed_at | Thời điểm xác nhận kích hoạt |
 
 ## 5. Ràng buộc nghiệp vụ cần enforce ở DB/service
 

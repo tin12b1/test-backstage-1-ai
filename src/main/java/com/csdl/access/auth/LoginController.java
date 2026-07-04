@@ -31,6 +31,7 @@ public class LoginController {
         this.captchaService = captchaService;
     }
 
+    /** Hien thi trang dang nhap; hien thong bao loi/dang xuat/tu choi truy cap neu co. */
     @GetMapping("/login")
     public String loginPage(@RequestParam(required = false) String error,
                             @RequestParam(required = false) String logout,
@@ -43,11 +44,15 @@ public class LoginController {
             model.addAttribute("infoMessage", "Ban da dang xuat.");
         }
         if (denied != null) {
-            model.addAttribute("errorMessage", "Ban khong co quyen truy cap chuc nang nay.");
+            model.addAttribute("errorMessage", "Bạn không có quyền truy cập chức năng này.");
         }
         return "login/login";
     }
 
+    /**
+     * Xu ly submit dang nhap: kiem tra captcha, xac thuc, roi dieu huong.
+     * Neu co 1 vai tro thi vao dashboard luon; neu nhieu vai tro thi cho chon.
+     */
     @PostMapping("/login")
     public String doLogin(@RequestParam String username,
                           @RequestParam String password,
@@ -59,7 +64,7 @@ public class LoginController {
         String expectedCaptcha = (String) session.getAttribute(CaptchaService.SESSION_KEY);
         session.removeAttribute(CaptchaService.SESSION_KEY);
         if (!captchaService.matches(expectedCaptcha, captcha)) {
-            model.addAttribute("errorMessage", "Ma xac nhan khong dung. Vui long thu lai.");
+            model.addAttribute("errorMessage", "Mã xác nhận không đúng. Vui lòng thử lại.");
             return "login/login";
         }
 
@@ -71,6 +76,7 @@ public class LoginController {
 
         sessionManager.initSession(result.getUser(), result.getRoles());
 
+        // Chi co 1 vai tro: kich hoat luon va vao dashboard
         if (result.getRoles().size() == 1) {
             sessionManager.activateRole(result.getRoles().get(0), request);
             return "redirect:/dashboard";
@@ -80,6 +86,7 @@ public class LoginController {
         return "auth/select-role";
     }
 
+    /** Kich hoat vai tro nguoi dung da chon (khi co nhieu vai tro), roi vao dashboard. */
     @PostMapping("/session/role")
     public String selectRole(@RequestParam String roleCode,
                              HttpServletRequest request,
@@ -91,12 +98,14 @@ public class LoginController {
         try {
             role = RoleCode.valueOf(roleCode);
         } catch (IllegalArgumentException e) {
-            model.addAttribute("errorMessage", "Vai tro khong hop le.");
+            // Ma vai tro gui len khong ton tai
+            model.addAttribute("errorMessage", "Vai trò không hợp lệ.");
             model.addAttribute("roles", userSession.getAvailableRoles());
             return "auth/select-role";
         }
         if (!sessionManager.hasRole(role)) {
-            model.addAttribute("errorMessage", "Ban khong duoc gan vai tro nay.");
+            // Vai tro hop le nhung khong duoc gan cho nguoi dung nay
+            model.addAttribute("errorMessage", "Bạn không được gán vai trò này.");
             model.addAttribute("roles", userSession.getAvailableRoles());
             return "auth/select-role";
         }
@@ -104,16 +113,17 @@ public class LoginController {
         return "redirect:/dashboard";
     }
 
+    /** Doi trang thai ket qua dang nhap sang thong bao than thien cho nguoi dung. */
     private String friendly(LoginResult result) {
         switch (result.getStatus()) {
             case USER_LOCKED:
-                return "Tai khoan da bi khoa. Vui long lien he quan tri.";
+                return "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị.";
             case NOT_REGISTERED:
                 return result.getMessage();
             case CONNECTION_ERROR:
-                return "He thong xac thuc dang ban. Vui long thu lai sau.";
+                return "Hệ thống xác thực đang bận. Vui lòng thử lại sau.";
             default:
-                return "Sai tai khoan hoac mat khau.";
+                return "Sai tài khoản hoặc mật khẩu.";
         }
     }
 }

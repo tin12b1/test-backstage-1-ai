@@ -24,11 +24,14 @@ Cung cấp chức năng cấu hình danh mục nền tảng để phục vụ l�
 ## 3. Chức năng người dùng
 
 - Danh sách người dùng.
+- Tìm kiếm người dùng theo tài khoản.
+- Hiển thị trạng thái kích hoạt Google Authenticator của từng người dùng.
 - Thêm/đăng ký người dùng từ thông tin AD.
 - Cập nhật thông tin liên hệ nếu được phép.
 - Gán vai trò.
 - Hủy/khóa người dùng.
 - Khai báo ảnh chữ ký.
+- Cấp/đăng ký và reset Google Authenticator cho người dùng (ADMIN), tại `/config/users/{id}/ga`.
 
 ## 4. Chức năng đơn vị/phòng
 
@@ -51,6 +54,18 @@ Cung cấp chức năng cấu hình danh mục nền tảng để phục vụ l�
 - Xem danh mục vai trò.
 - Xem danh mục trạng thái.
 - Không tự ý xóa vai trò/trạng thái hệ thống nếu đã phát sinh dữ liệu.
+
+## 6.1. Log giao dịch (kiểm tra lỗi)
+
+- Màn hình `/config/logs` (ADMIN) tổng hợp log để quản trị/dev kiểm tra lỗi, gồm 5 tab:
+  - **Nhật ký thao tác** (`audit_log`): các thao tác nghiệp vụ (tạo nháp, ký, gán vai trò...).
+  - **Đăng nhập** (`login_log`): kết quả đăng nhập, tô đỏ dòng thất bại.
+  - **Ký/OTP** (`otp_transaction`): kết quả ký/xác thực OTP, tô đỏ dòng khác `SUCCESS`.
+  - **Hàng đợi email** (`email_queue`): trạng thái gửi email, tô đỏ dòng `FAILED`, kèm lỗi gần nhất.
+  - **Debug ứng dụng**: đọc trực tiếp các dòng cuối của file log ứng dụng (`logging.file.name`,
+    mặc định `logs/csdl-access.log`) cho lập trình viên; đặt `APP_LOG_LEVEL=DEBUG` để ghi chi tiết hơn.
+- Bộ lọc: từ khóa (`q`) và "Chỉ hiển thị lỗi" (`onlyErrors`). Mỗi nguồn hiển thị tối đa 500 dòng gần
+  nhất (Debug: 800 dòng cuối file).
 
 ## 7. Quy tắc nghiệp vụ
 

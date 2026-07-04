@@ -22,21 +22,27 @@ public class LdapAdClient implements AdClient {
 
     private static final Logger log = LoggerFactory.getLogger(LdapAdClient.class);
 
+    /** URL server LDAP (vi du ldap://host:389). */
     @Value("${integration.ad.url}")
     private String url;
 
+    /** Domain AD ghep vao truoc username khi bind. De trong neu khong can. */
     @Value("${integration.ad.domain:}")
     private String domain;
 
+    /** Thoi gian cho ket noi/doc LDAP (ms). */
     @Value("${integration.ad.timeout-ms:5000}")
     private String timeoutMs;
 
     @Override
     public AdAuthResult authenticate(String username, String password) {
+        // Kiem tra dau vao truoc khi bind.
         if (username == null || username.isBlank() || password == null || password.isEmpty()) {
             return AdAuthResult.of(AdAuthResult.Status.BAD_CREDENTIALS, "Thieu thong tin dang nhap");
         }
+        // Ghep domain neu co cau hinh (dinh dang DOMAIN\\username).
         String principal = domain == null || domain.isBlank() ? username : domain + "\\" + username;
+        // Chuan bi moi truong JNDI cho bind LDAP "simple" voi credential nguoi dung.
         Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, url);
@@ -48,6 +54,7 @@ public class LdapAdClient implements AdClient {
 
         InitialDirContext ctx = null;
         try {
+            // Bind thanh cong = tai khoan/mat khau hop le.
             ctx = new InitialDirContext(env);
             return AdAuthResult.success();
         } catch (javax.naming.AuthenticationException e) {

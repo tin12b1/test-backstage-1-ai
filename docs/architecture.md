@@ -6,7 +6,7 @@ Kiến trúc giai đoạn đầu thống nhất theo tài liệu nghiệp vụ:
 
 - Monolith: Spring Boot + Thymeleaf.
 - Máy chủ WebApp cài Nginx để reverse proxy vào ứng dụng Spring Boot.
-- Ứng dụng kết nối AD, Email, SoftOTP/OTP và Database nội bộ.
+- Ứng dụng kết nối AD, Email, Google Authenticator (TOTP)/OTP và Database nội bộ.
 
 ## 2. Mô hình lớp
 
@@ -40,7 +40,7 @@ Application Database
 | Execution | Mở truy cập, kiểm tra script, DBA/người thực hiện xác nhận hoàn thành |
 | Search & Report | Tra cứu theo phân quyền, xuất Excel/PDF, báo cáo khi có mẫu |
 | Configuration | Người dùng, đơn vị, phòng, hệ thống, CSDL, vai trò, trạng thái |
-| Integration | AD, Email, SoftOTP/OTP |
+| Integration | AD, Email, OTP (Google Authenticator) |
 | Audit | Log đăng nhập, log thao tác, nhật ký công việc 07-NKCV |
 
 ## 4. Hard rules
@@ -78,7 +78,8 @@ Application Database
 
 ## 6. Quy tắc ký xác nhận
 
-- Ký xác nhận bằng SoftOTP/OTP.
+- Ký xác nhận bằng Google Authenticator (TOTP); SoftOTP/ESB là phương án thay thế qua cấu hình `integration.otp.mode`.
+- Người dùng phải đăng ký và kích hoạt Google Authenticator trước khi ký; ADMIN có thể cấp/reset GA cho người dùng.
 - Sau khi ký thành công, hệ thống hiển thị hình ảnh chữ ký đã khai báo trên hệ thống.
 - Thông tin cần lưu: người ký, vai trò ký, thời gian ký, phương thức ký, kết quả xác thực, bước xử lý, nội dung ký.
 - Với mẫu 01-YCTC và 04A-YCTK, mỗi người dùng chỉ cần ký một lần; hệ thống tự động điền chữ ký cho phần thông tin chung và các dòng chi tiết liên quan.

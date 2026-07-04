@@ -6,11 +6,14 @@ import com.csdl.access.domain.AppUser;
 import com.csdl.access.domain.DatabaseCatalog;
 import com.csdl.access.domain.InformationSystem;
 import com.csdl.access.domain.Unit;
+import com.csdl.access.domain.WorkShift;
 import com.csdl.access.domain.repo.AccessRightCatalogRepository;
 import com.csdl.access.domain.repo.AppUserRepository;
 import com.csdl.access.domain.repo.DatabaseCatalogRepository;
+import com.csdl.access.domain.repo.DepartmentRepository;
 import com.csdl.access.domain.repo.InformationSystemRepository;
 import com.csdl.access.domain.repo.UnitRepository;
+import com.csdl.access.domain.repo.WorkShiftRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,20 +26,31 @@ public class LookupService {
 
     private final AppUserRepository appUserRepository;
     private final UnitRepository unitRepository;
+    private final DepartmentRepository departmentRepository;
     private final InformationSystemRepository systemRepository;
     private final DatabaseCatalogRepository databaseRepository;
     private final AccessRightCatalogRepository rightRepository;
+    private final WorkShiftRepository workShiftRepository;
 
     public LookupService(AppUserRepository appUserRepository,
                          UnitRepository unitRepository,
+                         DepartmentRepository departmentRepository,
                          InformationSystemRepository systemRepository,
                          DatabaseCatalogRepository databaseRepository,
-                         AccessRightCatalogRepository rightRepository) {
+                         AccessRightCatalogRepository rightRepository,
+                         WorkShiftRepository workShiftRepository) {
         this.appUserRepository = appUserRepository;
         this.unitRepository = unitRepository;
+        this.departmentRepository = departmentRepository;
         this.systemRepository = systemRepository;
         this.databaseRepository = databaseRepository;
         this.rightRepository = rightRepository;
+        this.workShiftRepository = workShiftRepository;
+    }
+
+    // ===== Danh muc cho dropdown =====
+    public List<WorkShift> shifts() {
+        return workShiftRepository.findByActiveTrueOrderByShiftNo();
     }
 
     // ===== Danh muc cho dropdown =====
@@ -60,6 +74,7 @@ public class LookupService {
         return unitRepository.findByActiveTrue();
     }
 
+    // ===== Tra ten/ma hien thi tu id (tra chuoi rong neu khong tim thay) =====
     public String userName(Long userId) {
         if (userId == null) {
             return "";
@@ -72,6 +87,27 @@ public class LookupService {
             return "";
         }
         return unitRepository.findById(unitId).map(u -> u.getName()).orElse("");
+    }
+
+    public String departmentName(Long departmentId) {
+        if (departmentId == null) {
+            return "";
+        }
+        return departmentRepository.findById(departmentId).map(d -> d.getName()).orElse("");
+    }
+
+    public String unitCode(Long unitId) {
+        if (unitId == null) {
+            return "";
+        }
+        return unitRepository.findById(unitId).map(u -> u.getCode()).orElse("");
+    }
+
+    public String departmentCode(Long departmentId) {
+        if (departmentId == null) {
+            return "";
+        }
+        return departmentRepository.findById(departmentId).map(d -> d.getCode()).orElse("");
     }
 
     public String systemName(Long systemId) {

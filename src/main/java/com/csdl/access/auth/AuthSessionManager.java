@@ -20,6 +20,7 @@ import java.util.List;
 @Component
 public class AuthSessionManager {
 
+    // Khoa luu SecurityContext trong HTTP session
     private static final String SPRING_SECURITY_CONTEXT_KEY = "SPRING_SECURITY_CONTEXT";
 
     private final UserSession userSession;
@@ -58,6 +59,7 @@ public class AuthSessionManager {
         session.setAttribute(SPRING_SECURITY_CONTEXT_KEY, context);
     }
 
+    /** Kiem tra nguoi dung co duoc gan vai tro nay hay khong. */
     public boolean hasRole(RoleCode role) {
         return userSession.getAvailableRoles().contains(role);
     }

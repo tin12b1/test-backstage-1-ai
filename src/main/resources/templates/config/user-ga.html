@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Cấp Google Authenticator')"></head>
+<body>
+<nav th:replace="fragments/layout :: navbar"></nav>
+<div class="container">
+
+    <div class="breadcrumb">
+        <a th:href="@{/dashboard}">Trang chủ</a><span class="sep">/</span>
+        <a th:href="@{/config/users}">Người dùng</a><span class="sep">/</span>
+        <span class="current">Google Authenticator</span>
+    </div>
+
+    <div class="alert alert-info" th:if="${infoMessage}" th:text="${infoMessage}"></div>
+    <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <div class="card">
+        <div class="section-title">Google Authenticator cho người dùng</div>
+        <table>
+            <tr><th style="width:200px">Tài khoản</th><td th:text="${user.username}"></td></tr>
+            <tr><th>Họ và tên</th><td th:text="${user.fullName}"></td></tr>
+            <tr><th>Trạng thái</th><td>
+                <b th:if="${enabled}" style="color:#1f7a44">Đã kích hoạt</b>
+                <b th:if="${hasSecret and !enabled}" style="color:#c9a227">Đã cấp, chờ kích hoạt</b>
+                <b th:if="${!hasSecret}" style="color:#b3261e">Chưa đăng ký</b>
+            </td></tr>
+        </table>
+
+        <div class="grid-actions" style="margin-top:14px">
+            <form th:action="@{'/config/users/' + ${user.id} + '/ga/enroll'}" method="post"
+                  onsubmit="return confirm('Cấp/tạo lại mã Google Authenticator cho người dùng này?');">
+                <button type="submit" class="btn" th:text="${hasSecret} ? 'Tạo lại mã GA' : 'Đăng ký GA'"></button>
+            </form>
+            <form th:if="${hasSecret}" th:action="@{'/config/users/' + ${user.id} + '/ga/reset'}" method="post"
+                  onsubmit="return confirm('Reset Google Authenticator của người dùng này?');">
+                <button type="submit" class="btn btn-danger">Reset GA</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card" th:if="${hasSecret}">
+        <div class="section-title">Khóa bí mật để thêm vào ứng dụng</div>
+        <p class="text-muted">Cung cấp thông tin sau cho người dùng để thêm vào Google Authenticator
+            (quét QR hoặc "Nhập khóa thiết lập", loại Time-based, 6 số, 30 giây).</p>
+        <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start">
+            <img th:src="@{'/config/users/' + ${user.id} + '/ga/qr'}" alt="QR Google Authenticator"
+                 style="width:200px;height:200px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:6px"/>
+            <table style="flex:1 1 320px">
+                <tr><th style="width:160px">Tên tài khoản</th><td th:text="${issuer + ' (' + user.username + ')'}"></td></tr>
+                <tr><th>Khóa bí mật</th>
+                    <td style="font-family:monospace;font-size:16px;letter-spacing:1px" th:text="${secretDisplay}"></td></tr>
+                <tr><th>Liên kết otpauth</th>
+                    <td style="word-break:break-all"><a th:href="${otpAuthUri}" th:text="${otpAuthUri}"></a></td></tr>
+            </table>
+        </div>
+    </div>
+
+    <p><a class="btn btn-secondary" th:href="@{/config/users}">Quay lại danh sách người dùng</a></p>
+
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+</body>
+</html>

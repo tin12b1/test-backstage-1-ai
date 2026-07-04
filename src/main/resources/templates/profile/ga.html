@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Google Authenticator')"></head>
+<body>
+<nav th:replace="fragments/layout :: navbar"></nav>
+<div class="container">
+
+    <div class="breadcrumb">
+        <a th:href="@{/dashboard}">Trang chủ</a><span class="sep">/</span>
+        <a th:href="@{/profile}">Thông tin người dùng</a><span class="sep">/</span>
+        <span class="current">Google Authenticator</span>
+    </div>
+
+    <div class="alert alert-info" th:if="${infoMessage}" th:text="${infoMessage}"></div>
+    <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <div class="card">
+        <div class="section-title">Xác thực ký bằng Google Authenticator</div>
+        <p class="text-muted">
+            Hệ thống dùng Google Authenticator (mã 6 số, đổi mỗi 30 giây) để ký xác nhận thay cho SoftOTP.
+            Trạng thái:
+            <b th:if="${enabled}" style="color:#1f7a44">Đã kích hoạt</b>
+            <b th:if="${pending}" style="color:#c9a227">Đang chờ xác nhận</b>
+            <b th:if="${!enabled and !pending}" style="color:#b3261e">Chưa đăng ký</b>
+        </p>
+
+        <!-- Chua dang ky: nut Dang ky -->
+        <form th:if="${!enabled and !pending}" th:action="@{/profile/ga/enroll}" method="post">
+            <button type="submit" class="btn">Đăng ký Google Authenticator</button>
+        </form>
+
+        <!-- Da kich hoat: nut Reset -->
+        <div th:if="${enabled}">
+            <p>Bạn đã đăng ký Google Authenticator. Khi đổi/mất điện thoại, hãy Reset để đăng ký lại.</p>
+            <form th:action="@{/profile/ga/reset}" method="post"
+                  onsubmit="return confirm('Reset Google Authenticator? Bạn sẽ phải đăng ký lại trước khi ký xác nhận.');">
+                <button type="submit" class="btn btn-danger">Reset Google Authenticator</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dang cho xac nhan: hien secret + nhap ma -->
+    <div class="card" th:if="${pending}">
+        <div class="section-title">Bước 1 — Thêm tài khoản vào Google Authenticator</div>
+        <p class="text-muted">Mở Google Authenticator → "Thêm tài khoản" → quét mã QR dưới đây,
+            hoặc "Nhập khóa thiết lập" (Time-based) bằng khóa bí mật.</p>
+        <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start">
+            <img th:src="@{/profile/ga/qr}" alt="QR Google Authenticator"
+                 style="width:200px;height:200px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:6px"/>
+            <table style="flex:1 1 320px">
+                <tr><th style="width:160px">Tên tài khoản</th><td th:text="${issuer + ' (' + account + ')'}"></td></tr>
+                <tr><th>Khóa bí mật</th>
+                    <td style="font-family:monospace;font-size:16px;letter-spacing:1px" th:text="${secretDisplay}"></td></tr>
+                <tr><th>Loại</th><td>Theo thời gian (Time-based, 6 số, 30 giây)</td></tr>
+                <tr><th>Liên kết otpauth</th>
+                    <td style="word-break:break-all"><a th:href="${otpAuthUri}" th:text="${otpAuthUri}"></a></td></tr>
+            </table>
+        </div>
+
+        <hr/>
+        <div class="section-title">Bước 2 — Nhập mã 6 số để xác nhận</div>
+        <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
+            <form th:action="@{/profile/ga/confirm}" method="post"
+                  style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin:0">
+                <div class="form-row" style="flex:0 0 200px; margin:0">
+                    <label>Mã 6 số</label>
+                    <input type="text" name="code" inputmode="numeric" autocomplete="off"
+                           maxlength="6" required/>
+                </div>
+                <button type="submit" class="btn btn-success">Xác nhận kích hoạt</button>
+            </form>
+            <form th:action="@{/profile/ga/reset}" method="post" style="margin:0">
+                <button type="submit" class="btn btn-secondary">Hủy đăng ký</button>
+            </form>
+        </div>
+    </div>
+
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+</body>
+</html>

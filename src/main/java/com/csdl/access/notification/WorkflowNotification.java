@@ -5,16 +5,16 @@ package com.csdl.access.notification;
  */
 public class WorkflowNotification {
 
-    private String toAddress;
-    private Long requestId;
-    private String requestCode;
-    private String requestType;
-    private String status;
-    private String eventType;
-    private String eventLabel;
-    private String fromUser;
-    private String targetActor;
-    private String link;
+    private String toAddress;    // Email nguoi nhan
+    private Long requestId;      // ID phieu yeu cau
+    private String requestCode;  // Ma phieu yeu cau
+    private String requestType;  // Ten loai yeu cau (hien thi)
+    private String status;       // Ten trang thai phieu (hien thi)
+    private String eventType;    // Ma su kien (NotificationEvent.name())
+    private String eventLabel;   // Mo ta su kien (hien thi)
+    private String fromUser;     // Nguoi gay ra su kien
+    private String targetActor;  // Vai tro nguoi nhan (hien thi)
+    private String link;         // Duong dan mo chi tiet phieu
 
     public String getToAddress() {
         return toAddress;

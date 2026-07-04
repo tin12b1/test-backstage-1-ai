@@ -16,6 +16,8 @@ Cho phép người sử dụng đăng nhập hệ thống bằng tài khoản AD
 - Quản lý phiên đăng nhập.
 - Nếu user có nhiều vai trò, hiển thị màn hình chọn vai trò làm việc.
 - Sau khi chọn vai trò, chuyển đến Dashboard theo vai trò.
+- Đổi vai trò làm việc ngay trên thanh tiêu đề (cạnh biểu tượng người dùng), không cần đăng xuất.
+- Màn hình thông tin người dùng (cạnh biểu tượng người dùng): thông tin cá nhân, vai trò, chữ ký, hệ thống thông tin và CSDL liên quan.
 
 ## 3. Ngoài phạm vi
 
@@ -40,6 +42,17 @@ Cho phép người sử dụng đăng nhập hệ thống bằng tài khoản AD
 - Thông báo lỗi rõ ràng khi đăng nhập sai hoặc user chưa được đăng ký vai trò.
 - Màn hình chọn vai trò nếu user có nhiều vai trò.
 - Không hiển thị thông tin kỹ thuật/stacktrace cho người dùng.
+
+### 5.1. Đổi vai trò trên thanh tiêu đề
+
+- Cạnh biểu tượng/tên người dùng có dropdown đổi vai trò, chỉ hiển thị khi tài khoản có nhiều vai trò.
+- Chọn vai trò khác sẽ kích hoạt active role mới (gọi `POST /session/role`) và về Dashboard, không cần đăng xuất.
+- Tài khoản chỉ có một vai trò: hiển thị tên vai trò, không có dropdown.
+
+### 5.2. Màn hình thông tin người dùng (`/profile`)
+
+- Mở bằng cách bấm vào tên người dùng cạnh biểu tượng người dùng.
+- Hiển thị: thông tin cá nhân (tài khoản, họ tên, email, ĐTDĐ, đơn vị, phòng, trạng thái); danh sách vai trò và vai trò đang dùng; ảnh chữ ký đã khai báo (`GET /profile/signature`, nếu chưa có thì báo "Chưa khai báo chữ ký"); hệ thống thông tin liên quan và CSDL liên quan (theo phạm vi vai trò của người dùng).
 
 ## 6. Quy tắc nghiệp vụ
 
@@ -75,6 +88,8 @@ Cho phép người sử dụng đăng nhập hệ thống bằng tài khoản AD
 - User chưa có vai trò không được vào hệ thống.
 - Log đăng nhập được ghi.
 - Session lưu đúng username và active role.
+- Đổi vai trò trên thanh tiêu đề cập nhật đúng active role mà không phải đăng nhập lại.
+- Màn hình `/profile` hiển thị đúng thông tin cá nhân, vai trò, chữ ký, hệ thống/CSDL liên quan.
 
 ## 10. Definition of Done
 
