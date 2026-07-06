@@ -1,5 +1,0 @@
-com\csdl\access\workflow\WorkflowIntegrationTest.class
-com\csdl\access\auth\AuthServiceTest.class
-com\csdl\access\auth\CaptchaServiceTest.class
-com\csdl\access\integration\ad\EsbAdClientTest.class
-com\csdl\access\integration\otp\EsbOtpClientTest.class
