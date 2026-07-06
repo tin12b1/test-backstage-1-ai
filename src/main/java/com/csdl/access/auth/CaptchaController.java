@@ -21,6 +21,7 @@ public class CaptchaController {
         this.captchaService = captchaService;
     }
 
+    /** Sinh ma captcha moi, luu vao session va tra ve anh PNG. */
     @GetMapping("/captcha")
     public ResponseEntity<byte[]> captcha(HttpSession session) throws IOException {
         String code = captchaService.generateCode();

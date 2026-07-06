@@ -15,6 +15,7 @@ public class MockOtpClient implements OtpClient {
 
     private static final Logger log = LoggerFactory.getLogger(MockOtpClient.class);
 
+    /** Gia tri OTP hop le trong moi truong gia lap. */
     @Value("${integration.otp.mock-value:123456}")
     private String mockValue;
 
@@ -25,6 +26,6 @@ public class MockOtpClient implements OtpClient {
         if (otp != null && otp.equals(mockValue)) {
             return OtpVerifyResult.success();
         }
-        return OtpVerifyResult.failure("Ma OTP khong dung");
+        return OtpVerifyResult.failure("Mã OTP không đúng");
     }
 }

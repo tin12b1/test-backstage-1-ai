@@ -67,6 +67,18 @@
             <version>${poi.version}</version>
         </dependency>
 
+        <!-- QR code cho dang ky Google Authenticator -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+
         <!-- H2 cho dev/test -->
         <dependency>
             <groupId>com.h2database</groupId>

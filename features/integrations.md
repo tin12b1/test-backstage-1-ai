@@ -10,7 +10,8 @@ Xây dựng các service tích hợp phục vụ đăng nhập, ký xác nhận 
 ## 2. Phạm vi
 
 - AD: kết nối AD để dùng cho đăng nhập và lấy thông tin người dùng.
-- SoftOTP: xác nhận khi người dùng ký xác nhận.
+- Google Authenticator (TOTP): xác nhận khi người dùng ký xác nhận; có đăng ký và reset.
+  (SoftOTP qua ESB là phương án thay thế qua cấu hình.)
 - Email: tổng hợp danh sách và gửi email thông báo nghiệp vụ.
 
 ## 3. AD Integration
@@ -84,6 +85,11 @@ trực tiếp. App gửi `VerifyUserADReq`, trục chuyển tới AD và trả `
 
 - `EsbAdClient` không thêm dependency SOAP riêng: dựng XML bằng chuỗi, gọi `RestTemplate`
   (content-type `text/xml`), parse bằng JAXP (đã tắt DTD/external entity chống XXE).
+- Body được **bọc trong SOAP 1.1 Envelope** (`soapenv:Envelope/soapenv:Body`, namespace
+  `http://schemas.xmlsoap.org/soap/envelope/`); trục IBM/Axis2 yêu cầu Envelope hợp lệ nếu không
+  sẽ trả fault "First Element must contain the local name, Envelope".
+- `endpoint` cấu hình là **URL dịch vụ** (bỏ hậu tố `?wsdl`), ví dụ
+  `http://<host>:7800/service/vn/authen/authensvcs/1`.
 - `VerifyUserAD` chỉ xác thực, không trả hồ sơ người dùng; `getUserProfile` hiện trả hồ sơ tối
   thiểu. Nếu trục có service riêng để lấy thông tin cán bộ thì bổ sung sau.
 
@@ -93,12 +99,13 @@ trực tiếp. App gửi `VerifyUserADReq`, trục chuyển tới AD và trả `
 - Timeout kết nối phải có cấu hình.
 - Lỗi AD phải được xử lý thân thiện trên màn hình đăng nhập.
 
-## 4. SoftOTP Integration
+## 4. OTP Integration (Google Authenticator / SoftOTP)
 
 ### Chức năng
 
-- Xác thực OTP khi người dùng ký xác nhận.
+- Xác thực OTP khi người dùng ký xác nhận. **Phương thức chính: Google Authenticator (TOTP)** thay cho SoftOTP.
 - Dùng cho ký tại thông tin chung, ký chi tiết, ký phê duyệt, ký xác nhận thực hiện.
+- Đăng ký (enroll), xác nhận kích hoạt và reset Google Authenticator cho từng người dùng.
 - Lưu kết quả giao dịch OTP để audit.
 
 ### Interface đề xuất
@@ -111,10 +118,44 @@ public interface OtpClient {
 
 ### Các chế độ triển khai (`integration.otp.mode`)
 
-| Mode   | Lớp cài đặt     | Dùng cho                                          |
-|--------|-----------------|---------------------------------------------------|
-| `mock` | `MockOtpClient` | Dev/test, OTP đúng = giá trị cấu hình (123456).   |
-| `esb`  | `EsbOtpClient`  | Gọi dịch vụ SOAP `VerifyOTP` trên trục tích hợp.  |
+| Mode   | Lớp cài đặt                    | Dùng cho                                          |
+|--------|--------------------------------|---------------------------------------------------|
+| `ga`   | `GoogleAuthenticatorOtpClient` | **Mặc định.** Google Authenticator (TOTP RFC 6238). |
+| `mock` | `MockOtpClient`                | Dev/test, OTP đúng = giá trị cấu hình (123456).   |
+| `esb`  | `EsbOtpClient`                 | Gọi dịch vụ SOAP `VerifyOTP` trên trục tích hợp.  |
+
+### 4.0. Google Authenticator (TOTP) — `mode=ga`
+
+Thay cho SoftOTP. Mỗi người dùng có một bí mật TOTP (Base32) lưu ở bảng `user_totp`; ứng dụng
+Google Authenticator sinh mã 6 số đổi mỗi 30 giây để ký xác nhận.
+
+**Thông số TOTP:** HMAC-SHA1, 6 chữ số, chu kỳ 30 giây, chấp nhận lệch ±1 bước thời gian
+(do lệch đồng hồ). Tính toán bằng `TotpService` (JDK, không thêm thư viện ngoài).
+
+**Đăng ký / xác nhận / reset** (màn hình `/profile/ga`):
+
+1. **Đăng ký** (`POST /profile/ga/enroll`): hệ thống sinh bí mật Base32 mới, lưu trạng thái
+   `enabled=false` (chờ xác nhận).
+2. **Thêm vào ứng dụng**: người dùng mở Google Authenticator → quét mã QR hiển thị, hoặc
+   "Nhập khóa thiết lập" (Time-based) bằng khóa bí mật; hoặc dùng liên kết `otpauth://totp/...`.
+   Mã QR được vẽ bằng thư viện zxing tại `GET /profile/ga/qr` (ADMIN: `/config/users/{id}/ga/qr`).
+3. **Xác nhận** (`POST /profile/ga/confirm`): nhập mã 6 số hiện trên app; nếu khớp thì
+   `enabled=true`, `confirmed_at=now` → kích hoạt.
+4. **Ký xác nhận**: ở các bước ký (lập/chi tiết/phê duyệt/thực hiện), người dùng nhập mã 6 số;
+   `GoogleAuthenticatorOtpClient.verify` đối chiếu với bí mật đã kích hoạt.
+5. **Reset** (`POST /profile/ga/reset`): xóa đăng ký hiện tại (khi đổi/mất điện thoại) để
+   đăng ký lại. Sau khi reset, người dùng chưa thể ký cho tới khi đăng ký + xác nhận lại.
+
+**Quản trị hệ thống (ADMIN) cấp GA cho mọi người dùng** (màn `/config/users/{id}/ga`):
+
+- `POST /config/users/{id}/ga/enroll`: ADMIN sinh bí mật mới và **kích hoạt luôn** cho người dùng;
+  màn hình hiển thị khóa bí mật + liên kết `otpauth://` để bàn giao cho người dùng thêm vào app.
+- `POST /config/users/{id}/ga/reset`: ADMIN reset (xóa) đăng ký GA của người dùng.
+- Chỉ ADMIN truy cập được (`/config/**` giới hạn ADMIN trong `SecurityConfig`); mọi thao tác ghi audit.
+
+> Bảng `user_totp`: `user_id` (duy nhất), `secret` (Base32), `enabled`, `created_at`, `confirmed_at`.
+> Nếu chưa đăng ký/kích hoạt, mọi thao tác ký sẽ bị từ chối với thông báo "Chưa đăng ký Google Authenticator".
+> Cấu hình `integration.otp.ga.issuer` là tên hiển thị trong app (mặc định `Agribank CSDL`).
 
 ### 4.1. Dịch vụ ESB `VerifyOTP`
 
@@ -186,16 +227,27 @@ public interface EmailService {
 
 ## 6. Cấu hình cần có
 
+> Cấu hình mặc định hiện tại: `integration.ad.mode=esb` với endpoint `AD_ESB_ENDPOINT`
+> (mặc định `http://10.0.111.37:7800/service/vn/authen/authensvcs/1`). Tất cả tham số đều override
+> được qua biến môi trường; chạy local không có mạng nội bộ thì đặt `AD_MODE=mock`
+> (đăng nhập giả lập, mật khẩu `password`).
+
 - AD URL/domain/base DN hoặc thông số LDAP tương ứng.
 - Timeout AD.
-- Khi `mode=esb`: endpoint dịch vụ `VerifyUserAD`, `SourceAppID`, `UserId`/mật khẩu hệ thống
-  (secret, dạng rõ), `FunctionCode`, domain prefix, timeout kết nối/đọc, `SOAPAction` (tùy chọn).
+- Khi `mode=esb`: endpoint dịch vụ `VerifyUserAD` (URL service, bỏ `?wsdl`), `SourceAppID`
+  (`AD_ESB_SOURCE_APP_ID`), `UserId`/mật khẩu hệ thống (`AD_ESB_USER_ID`/`AD_ESB_PASSWORD` —
+  secret, dạng rõ), `FunctionCode`, domain prefix (`AD_ESB_DOMAIN`), timeout kết nối/đọc,
+  `SOAPAction` (`AD_ESB_SOAP_ACTION`, tùy chọn).
 - Endpoint/credential SoftOTP.
+- OTP mặc định `mode=ga` (Google Authenticator); `integration.otp.ga.issuer` là tên hiển thị
+  trong app (mặc định `Agribank CSDL`). Bí mật TOTP lưu ở bảng `user_totp`.
 - Khi OTP `mode=esb`: endpoint dịch vụ `VerifyOTP`, credential hệ thống, `FunctionCode`,
   `TransType`/`DeviceTypeId`/`VerifyOTPType`, timeout, `SOAPAction` (tùy chọn).
-- SMTP host/port/user hoặc relay nội bộ.
-- Email sender mặc định.
-- Số lần retry email.
+- SMTP host/port/user (mặc định `smtp.agribank.com.vn:587`, user `ebanking`, STARTTLS bật).
+  Mật khẩu SMTP là **secret**: KHÔNG hard-code trong `application.yml`; truyền qua biến môi trường
+  `MAIL_PASSWORD` khi chạy (host/port/user cũng override được qua `MAIL_HOST`/`MAIL_PORT`/`MAIL_USER`).
+- Email sender mặc định (`EMAIL_SENDER`), bật/tắt gửi (`EMAIL_ENABLED`).
+- Số lần retry email (`EMAIL_MAX_RETRY`).
 
 ## 7. Allowed Files
 

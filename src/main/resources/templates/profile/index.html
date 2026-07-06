@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Thông tin người dùng')"></head>
+<body>
+<nav th:replace="fragments/layout :: navbar"></nav>
+<div class="container">
+
+    <div class="breadcrumb">
+        <a th:href="@{/dashboard}">Trang chủ</a><span class="sep">/</span>
+        <span class="current">Thông tin người dùng</span>
+    </div>
+
+    <div class="card">
+        <div class="section-title">Thông tin cá nhân</div>
+        <table>
+            <tr><th style="width:220px">Tài khoản</th><td th:text="${user != null ? user.username : ''}"></td></tr>
+            <tr><th>Họ và tên</th><td th:text="${user != null ? user.fullName : ''}"></td></tr>
+            <tr><th>Email</th><td th:text="${user != null ? user.email : ''}"></td></tr>
+            <tr><th>ĐTDĐ</th><td th:text="${user != null ? user.mobile : ''}"></td></tr>
+            <tr><th>Đơn vị</th><td th:text="${unitName}"></td></tr>
+            <tr><th>Phòng/bộ phận</th><td th:text="${departmentName}"></td></tr>
+            <tr><th>Trạng thái</th><td th:text="${user != null ? user.status : ''}"></td></tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <div class="section-title">Vai trò</div>
+        <p class="text-muted">Vai trò đang làm việc:
+            <b th:text="${activeRole != null ? activeRole.displayName : '(chưa chọn)'}"></b></p>
+        <table>
+            <thead><tr><th>Mã vai trò</th><th>Tên vai trò</th><th>Đang dùng</th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${roles}">
+                <td th:text="${r.name()}"></td>
+                <td th:text="${r.displayName}"></td>
+                <td><span class="badge" th:if="${activeRole != null and r == activeRole}">Đang dùng</span></td>
+            </tr>
+            <tr th:if="${roles == null or roles.isEmpty()}"><td colspan="3" class="text-muted">Chưa được gán vai trò.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <div class="section-title">Chữ ký</div>
+        <div class="sig-pad" th:classappend="${hasSignature} ? ' signed'">
+            <img th:if="${hasSignature}" th:src="@{/profile/signature}" alt="Chữ ký"/>
+            <span class="placeholder" th:unless="${hasSignature}">Chưa khai báo chữ ký</span>
+        </div>
+        <div class="hint">Ảnh chữ ký được khai báo trên hệ thống, dùng khi ký xác nhận.</div>
+    </div>
+
+    <div class="card">
+        <div class="section-title">Bảo mật ký xác nhận</div>
+        <p class="text-muted">Hệ thống dùng Google Authenticator để ký xác nhận (thay cho SoftOTP).</p>
+        <a class="btn" th:href="@{/profile/ga}">Quản lý Google Authenticator</a>
+    </div>
+
+    <div class="card">
+        <div class="section-title">Hệ thống thông tin liên quan</div>
+        <table>
+            <thead><tr><th>Ký hiệu</th><th>Tên hệ thống</th><th>Đơn vị chủ quản</th></tr></thead>
+            <tbody>
+            <tr th:each="s : ${systems}">
+                <td th:text="${s.code}"></td>
+                <td th:text="${s.name}"></td>
+                <td th:text="${lookup.unitName(s.ownerUnitId)}"></td>
+            </tr>
+            <tr th:if="${systems == null or systems.isEmpty()}"><td colspan="3" class="text-muted">Không có hệ thống liên quan.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <div class="section-title">CSDL liên quan</div>
+        <table>
+            <thead><tr><th>Mã CSDL</th><th>Tên CSDL</th><th>Hệ thống</th></tr></thead>
+            <tbody>
+            <tr th:each="db : ${databases}">
+                <td th:text="${db.code}"></td>
+                <td th:text="${db.name}"></td>
+                <td th:text="${lookup.systemName(db.systemId)}"></td>
+            </tr>
+            <tr th:if="${databases == null or databases.isEmpty()}"><td colspan="3" class="text-muted">Không có CSDL liên quan.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+</body>
+</html>

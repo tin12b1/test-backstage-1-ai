@@ -25,15 +25,34 @@ spring:
   sql:
     init:
       mode: always
+      encoding: UTF-8
 
   thymeleaf:
     cache: false
 
+  servlet:
+    multipart:
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:20MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:25MB}
+
   mail:
-    host: ${MAIL_HOST:localhost}
-    port: ${MAIL_PORT:25}
-    username: ${MAIL_USER:}
-    password: ${MAIL_PASSWORD:}
+    host: ${MAIL_HOST:smtp.agribank.com.vn}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USER:ebanking}
+    password: ${MAIL_PASSWORD:}      # secret - dat qua bien moi truong MAIL_PASSWORD, khong hard-code
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true          # port 587 dung STARTTLS
+          # Tin cert cua SMTP server noi bo (cert tu ky/CA noi bo khong co trong truststore JVM).
+          # Cach chuan hon: import cert vao truststore JVM. De trong de tat neu dung cert hop le.
+          ssl:
+            trust: ${MAIL_SSL_TRUST:smtp.agribank.com.vn}
+          connectiontimeout: ${MAIL_CONN_TIMEOUT:5000}
+          timeout: ${MAIL_TIMEOUT:5000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT:5000}
 
 server:
   port: 8080
@@ -44,27 +63,29 @@ server:
 # Cau hinh tich hop externalized theo features/integrations.md
 integration:
   ad:
-    mode: ${AD_MODE:mock}          # mock | ldap | esb
+    mode: ${AD_MODE:esb}           # mock | ldap | esb
     url: ${AD_URL:ldap://localhost:389}
     base-dn: ${AD_BASE_DN:dc=example,dc=com}
     domain: ${AD_DOMAIN:EXAMPLE}
     timeout-ms: ${AD_TIMEOUT:5000}
     # Cau hinh khi mode=esb: goi dich vu SOAP VerifyUserAD tren truc tich hop.
     esb:
-      endpoint: ${AD_ESB_ENDPOINT:}              # URL dich vu VerifyUserAD tren truc
+      endpoint: ${AD_ESB_ENDPOINT:http://10.0.111.37:7800/service/vn/authen/authensvcs/1}  # URL dich vu VerifyUserAD tren truc (bo ?wsdl)
       source-app-id: ${AD_ESB_SOURCE_APP_ID:EBANK}
       service-user-id: ${AD_ESB_USER_ID:EBANK}
       service-password: ${AD_ESB_PASSWORD:}      # mat khau he thong dang ro, secret
       function-code: ${AD_ESB_FUNCTION_CODE:AUTH-AUTHENADUSER-LDAP-AD}
       service-version: ${AD_ESB_SERVICE_VERSION:1}
-      domain: ${AD_ESB_DOMAIN:CORP}              # ghep CORP\username neu chua co
+      domain: ${AD_ESB_DOMAIN:TEST}              # ghep TEST\username neu chua co
       soap-action: ${AD_ESB_SOAP_ACTION:}        # tuy chon
       connect-timeout-ms: ${AD_ESB_CONNECT_TIMEOUT:5000}
       read-timeout-ms: ${AD_ESB_READ_TIMEOUT:10000}
   otp:
-    mode: ${OTP_MODE:mock}         # mock | esb
+    mode: ${OTP_MODE:ga}           # ga (Google Authenticator) | mock | esb
     endpoint: ${OTP_ENDPOINT:}
     mock-value: ${OTP_MOCK_VALUE:123456}
+    ga:
+      issuer: ${OTP_GA_ISSUER:Agribank CSDL}   # ten hien thi trong app Google Authenticator
     # Cau hinh khi mode=esb: goi dich vu SOAP VerifyOTP tren truc tich hop.
     esb:
       endpoint: ${OTP_ESB_ENDPOINT:}             # URL dich vu VerifyOTP tren truc
@@ -81,10 +102,18 @@ integration:
       read-timeout-ms: ${OTP_ESB_READ_TIMEOUT:10000}
   email:
     enabled: ${EMAIL_ENABLED:true}
-    sender: ${EMAIL_SENDER:no-reply@csdl.local}
+    sender: ${EMAIL_SENDER:ebanking@agribank.com.vn}   # phai trung hop thu tai khoan SMTP da xac thuc (hoac dia chi duoc phep Send-As)
     base-url: ${APP_BASE_URL:http://localhost:8080/app}
     max-retry: ${EMAIL_MAX_RETRY:3}
 
 logging:
   level:
-    com.csdl.access: INFO
+    com.csdl.access: ${APP_LOG_LEVEL:INFO}     # dat DEBUG de xem log chi tiet cho dev
+  file:
+    name: ${APP_LOG_FILE:logs/csdl-access.log}  # file log de xem tren man hinh "Debug ung dung"
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{40} - %msg%n"
+  logback:
+    rollingpolicy:
+      max-file-size: ${APP_LOG_MAX_SIZE:10MB}
+      max-history: ${APP_LOG_MAX_HISTORY:7}

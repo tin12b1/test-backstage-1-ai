@@ -27,15 +27,19 @@ public class EmailServiceImpl implements EmailService {
     private final EmailQueueRepository emailQueueRepository;
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
 
+    /** Bat/tat gui email thuc te; khi tat chi luu hang doi. */
     @Value("${integration.email.enabled:true}")
     private boolean enabled;
 
-    @Value("${integration.email.sender:no-reply@csdl.local}")
+    /** Dia chi nguoi gui (From). */
+    @Value("${integration.email.sender:ebanking@agribank.com.vn}")
     private String sender;
 
+    /** URL goc ung dung, dung de sinh link truy cap phieu trong noi dung email. */
     @Value("${integration.email.base-url:http://localhost:8080/app}")
     private String baseUrl;
 
+    /** So lan gui lai toi da cho email bi loi. */
     @Value("${integration.email.max-retry:3}")
     private int maxRetry;
 
@@ -48,6 +52,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Transactional
     public void sendWorkflowNotification(WorkflowNotification n) {
+        // Tao ban ghi hang doi (PENDING) truoc de khong mat du lieu neu gui loi.
         EmailQueue queue = new EmailQueue();
         queue.setToAddress(n.getToAddress());
         queue.setSubject(buildSubject(n));
@@ -57,6 +62,7 @@ public class EmailServiceImpl implements EmailService {
         queue.setStatus("PENDING");
         queue = emailQueueRepository.save(queue);
 
+        // Thu gui ngay; neu that bai se danh dau FAILED de retry sau.
         attemptSend(queue);
     }
 
@@ -66,6 +72,7 @@ public class EmailServiceImpl implements EmailService {
         if (notifications == null) {
             return;
         }
+        // Gui lan luot tung thong bao.
         for (WorkflowNotification n : notifications) {
             sendWorkflowNotification(n);
         }
@@ -81,6 +88,7 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    /** Thuc hien gui email cho mot ban ghi hang doi va cap nhat trang thai (SENT/FAILED/PENDING). */
     private void attemptSend(EmailQueue queue) {
         if (!enabled) {
             log.info("[EMAIL] Tat gui email; chi luu hang doi cho yeu cau requestId={}", queue.getRequestId());
@@ -88,11 +96,13 @@ public class EmailServiceImpl implements EmailService {
         }
         JavaMailSender sender = mailSenderProvider.getIfAvailable();
         if (sender == null) {
+            // Chua cau hinh mail sender: giu PENDING de gui lai khi da cau hinh.
             queue.setStatus("PENDING");
             log.warn("[EMAIL] Chua cau hinh JavaMailSender; giu trang thai PENDING");
             return;
         }
         try {
+            // Dung noi dung email don gian tu ban ghi hang doi va gui di.
             SimpleMailMessage msg = new SimpleMailMessage();
             msg.setFrom(this.sender);
             msg.setTo(queue.getToAddress());
@@ -103,6 +113,7 @@ public class EmailServiceImpl implements EmailService {
             queue.setStatus("SENT");
             queue.setSentAt(LocalDateTime.now());
         } catch (Exception e) {
+            // Loi gui: danh dau FAILED, tang so lan thu va luu thong bao loi de retry.
             queue.setStatus("FAILED");
             queue.setRetryCount(queue.getRetryCount() + 1);
             queue.setLastError(e.getMessage());
@@ -111,27 +122,31 @@ public class EmailServiceImpl implements EmailService {
         emailQueueRepository.save(queue);
     }
 
+    /** Dung tieu de email: [CSDL-Access] <ma yeu cau> - <su kien>. */
     private String buildSubject(WorkflowNotification n) {
         return String.format("[CSDL-Access] %s - %s", safe(n.getRequestCode()), safe(eventText(n)));
     }
 
+    /** Lay nhan su kien de hien thi (uu tien label, neu khong co dung eventType). */
     private String eventText(WorkflowNotification n) {
         return n.getEventLabel() != null ? n.getEventLabel() : n.getEventType();
     }
 
+    /** Dung noi dung email dang text gom thong tin phieu va link truy cap. */
     private String buildBody(WorkflowNotification n) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Ma yeu cau: ").append(safe(n.getRequestCode())).append("\n");
-        sb.append("Loai yeu cau: ").append(safe(n.getRequestType())).append("\n");
-        sb.append("Trang thai: ").append(safe(n.getStatus())).append("\n");
-        sb.append("Nguoi gui: ").append(safe(n.getFromUser())).append("\n");
-        sb.append("Nguoi/bo phan can xu ly: ").append(safe(n.getTargetActor())).append("\n");
+        sb.append("Mã yêu cầu: ").append(safe(n.getRequestCode())).append("\n");
+        sb.append("Loại yêu cầu: ").append(safe(n.getRequestType())).append("\n");
+        sb.append("Trạng thái: ").append(safe(n.getStatus())).append("\n");
+        sb.append("Người gửi: ").append(safe(n.getFromUser())).append("\n");
+        sb.append("Người/bộ phận cần xử lý: ").append(safe(n.getTargetActor())).append("\n");
         String link = n.getLink() != null ? n.getLink()
                 : baseUrl + "/requests/" + (n.getRequestId() == null ? "" : n.getRequestId());
-        sb.append("Link truy cap: ").append(link).append("\n");
+        sb.append("Link truy cập: ").append(link).append("\n");
         return sb.toString();
     }
 
+    /** Tra ve chuoi rong thay vi null de tranh in "null" trong email. */
     private String safe(String s) {
         return s == null ? "" : s;
     }

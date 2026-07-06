@@ -1,4 +1,4 @@
-```markdown
+
 # Feature: Chức năng lập và gửi yêu cầu
 
 **Người phụ trách:** Tin  
@@ -6,702 +6,621 @@
 
 ---
 
+## Changelog
+
+| Thời điểm | Nội dung thay đổi |
+|---|---|
+| 05/07/2026 16:57 | Cập nhật toàn bộ theo bản đề xuất FINAL v1.0: Bổ sung mẫu 04B-BGTK; Tách luồng 05B ra khỏi luồng 02,03; Cập nhật luồng 01/04A/05A; Thêm luồng 04B+05B; Thêm hệ thống trạng thái; Thêm Validation Rules; Cập nhật giao diện tất cả mẫu; Cập nhật quy tắc nghiệp vụ; Cập nhật Verification + DoD |
+| 05/07/2026 20:25 | Bổ sung chức năng con "Đăng ký trước Yêu cầu chi tiết" cho mẫu 01-YCTC: Giao diện đăng ký trước, bảng CSDL pre_registration_request, logic nạp tự động, hệ thống trạng thái bản ghi, validation rules #16-#22, test cases bổ sung |
+
+---
+
 ## 1. Mục tiêu
 
-Cho phép người lập yêu cầu đăng nhập, chọn mẫu phiếu, nhập thông tin, ký xác nhận, lưu nháp, gửi phê duyệt hoặc gửi bộ phận Mở truy cập đối với yêu cầu khẩn cấp. Đối với mẫu 04B-BGTK, cho phép DBA lập biên bản bàn giao tài khoản và gửi cho chủ tài khoản ký nhận.
+Cho phép người lập yêu cầu đăng nhập, chọn mẫu phiếu, nhập thông tin, ký xác nhận, lưu nháp, gửi phê duyệt hoặc gửi bộ phận Mở truy cập đối với yêu cầu khẩn cấp.
 
 ## 2. Mẫu phiếu hỗ trợ
 
-| Mẫu | Tên | Người lập |
-|---|---|---|
-| 01-YCTC | Truy cập, truy xuất CSDL thông thường | Người yêu cầu |
-| 02-YCCS | Chỉnh sửa dữ liệu | Người yêu cầu |
-| 03-YCCT | Thay đổi cấu trúc CSDL | Người yêu cầu |
-| 04A-YCTK | Cấp mới/thay đổi thuộc tính tài khoản | Người yêu cầu |
-| 04B-BGTK | Biên bản bàn giao tài khoản | DBA (Người quản trị CSDL) |
-| 05A-YCKC | Truy cập khẩn cấp | Người yêu cầu |
-| 05B-HTKC | Hoàn thành truy cập khẩn cấp | Người yêu cầu |
+- 01-YCTC: Truy cập, truy xuất CSDL thông thường.
+- 02-YCCS: Chỉnh sửa dữ liệu.
+- 03-YCCT: Thay đổi cấu trúc CSDL.
+- 04A-YCTK: Cấp mới/thay đổi thuộc tính tài khoản.
+- 04B-BGTK: Biên bản bàn giao tài khoản (DBA lập sau khi cấp thành công tài khoản theo 04A-YCTK).
+- 05A-YCKC: Truy cập khẩn cấp.
+- 05B-HTKC: Hoàn thành truy cập khẩn cấp.
 
-## 3. Luồng chung cho 02, 03, 05B
+## 3. Luồng 1: 02-YCCS, 03-YCCT (Gửi bộ phận kiểm tra)
 
 1. Người lập yêu cầu đăng nhập bằng tài khoản AD.
-2. Chọn chức năng "Lập yêu cầu", chọn mẫu phiếu.
-3. Nhập nội dung chi tiết cho từng mẫu phiếu.
-4. Ký xác nhận (SoftOTP) gửi phê duyệt.
-5. Hệ thống kiểm tra trường bắt buộc, sinh mã yêu cầu.
-6. Hệ thống lưu hồ sơ ở trạng thái:
-   - `Chờ phê duyệt`; hoặc
-   - `Chờ kiểm tra` với mẫu có yêu cầu kiểm tra (02-YCCS).
-7. Hệ thống gửi email đến Trưởng phòng/tương đương hoặc Bộ phận kiểm tra.
+2. Chọn chức năng "Lập yêu cầu", chọn mẫu phiếu (02-YCCS hoặc 03-YCCT).
+3. Chọn Hệ thống (1 HT duy nhất) → Chọn CSDL (1 CSDL duy nhất).
+4. Nhập nội dung chi tiết cho mẫu phiếu.
+5. Ký xác nhận gửi kiểm tra.
+6. Hệ thống kiểm tra trường bắt buộc + validation rules.
+7. Hệ thống sinh mã yêu cầu (format: KýhiệuĐV_DDMMYYYYCa:Lần: — Lần tự tăng theo số phiếu trong ca của đơn vị).
+8. Hệ thống lưu hồ sơ ở trạng thái `Chờ kiểm tra`.
+9. Hệ thống gửi email notification đến Bộ phận kiểm tra.
+10. → Kết thúc scope lập yêu cầu, chuyển scope phê duyệt.
 
-## 4. Luồng chung cho 01-YCTC, 04A-YCTK
+## 4. Luồng 2: 01-YCTC, 04A-YCTK (Phiếu nhiều người ký)
 
 1. Người lập đăng nhập bằng tài khoản AD.
-2. Chọn chức năng "Lập yêu cầu", chọn mẫu phiếu.
-3. Nhập nội dung chi tiết.
-4. Người lập chọn một trong hai hành động:
+2. Chọn chức năng "Lập yêu cầu", chọn mẫu phiếu (01-YCTC hoặc 04A-YCTK).
+3. (Mẫu 01-YCTC): Chọn "Loại yêu cầu" (Truy vấn / Chỉnh sửa) — áp dụng toàn bộ phiếu.
+4. (Mẫu 04A-YCTK): Chọn Hệ thống (1 HT) → Chọn CSDL (1 CSDL) — thông tin chung.
+5. Nhập thông tin chung + danh sách chi tiết (tối thiểu 1 dòng).
+6. Người lập chọn một trong hai hành động:
 
-── Nhánh A: Lưu phiếu ──
-5. Hệ thống kiểm tra trường bắt buộc, sinh mã yêu cầu.
-6. Hệ thống lưu hồ sơ ở trạng thái `Chờ ký xác nhận`.
-7. Hệ thống gửi email thông báo đến người dùng liên quan (người sử dụng chung phiếu) để ký xác nhận.
-8. Người dùng có liên quan đăng nhập bằng tài khoản AD.
-9. Chọn phiếu đang `Chờ ký xác nhận`.
-10. Kiểm tra/chỉnh sửa thông tin (chỉ phần của mình).
-11. Người dùng ký xác nhận (SoftOTP).
-12. Người lập phiếu ký xác nhận (SoftOTP), gửi phê duyệt.
-13. Hệ thống kiểm tra trường bắt buộc.
-14. Hệ thống lưu hồ sơ ở trạng thái `Chờ phê duyệt`.
-15. Hệ thống gửi email đến Trưởng phòng/tương đương.
+### Nhánh A: Lưu phiếu (chờ người khác ký)
 
-── Nhánh B: Ký xác nhận & Gửi ──
-5. Hệ thống kiểm tra trường bắt buộc, sinh mã yêu cầu.
-6. Hệ thống lưu hồ sơ ở trạng thái `Chờ phê duyệt`.
-7. Hệ thống gửi email đến Trưởng phòng/tương đương.
+7A. Hệ thống kiểm tra trường bắt buộc + validation rules.
+8A. Hệ thống sinh mã yêu cầu.
+9A. Hệ thống lưu hồ sơ ở trạng thái `Chờ ký xác nhận`.
+10A. Người dùng cùng đơn vị có nhu cầu đăng nhập bằng tài khoản AD.
+11A. Chọn phiếu đang "Chờ ký xác nhận".
+12A. Người dùng chỉ được:
+- Sửa dòng của mình (nếu đã có).
+- Thêm dòng mới (nếu chưa có dòng thông tin của mình).
+- Không giới hạn số lượng người dùng.
+13A. Người dùng ký xác nhận dòng chi tiết của mình.
+- Cơ chế: Row-level locking + Polling (cập nhật real-time mỗi X giây).
+- Mỗi người chỉ ký 1 lần trên 1 phiếu.
+14A. Người lập phiếu thực hiện 1 trong 2:
 
-## 5. Luồng riêng cho 05A-YCKC
+a) **Ký xác nhận & Gửi phê duyệt:**
+- Các dòng chưa ký xác nhận sẽ tự động bị xóa.
+- Hệ thống lưu trạng thái `Chờ phê duyệt`.
+- Gửi email notification đến Trưởng phòng/tương đương.
+- → Kết thúc scope lập yêu cầu, chuyển scope phê duyệt.
+
+b) **Hủy phiếu:**
+- Không cần lý do.
+- Trạng thái → `Đã hủy`.
+- → Kết thúc luồng.
+
+### Nhánh B: Ký xác nhận & Gửi (Người lập chính là người ký chi tiết)
+
+7B. Hệ thống kiểm tra trường bắt buộc + validation rules.
+8B. Hệ thống sinh mã yêu cầu.
+9B. Hệ thống lưu hồ sơ ở trạng thái `Chờ phê duyệt`.
+10B. Hệ thống gửi email notification đến Trưởng phòng/tương đương.
+11B. → Kết thúc scope lập yêu cầu, chuyển scope phê duyệt.
+
+### Timeout:
+
+- **Mẫu 01-YCTC:** Hết thời gian ca đã chọn. Khi người lập ký gửi, dòng chưa ký tự động bị xóa.
+- **Mẫu 04A-YCTK:** Trong ngày lập phiếu hoặc khi người lập ký gửi. Dòng chưa ký tự động bị xóa.
+
+## 5. Luồng 3: 05A-YCKC (Truy cập khẩn cấp — Gửi thẳng BP Mở truy cập)
 
 1. Người yêu cầu đăng nhập bằng tài khoản AD.
 2. Chọn chức năng "Lập yêu cầu", mẫu 05A-YCKC.
-3. Nhập nội dung chi tiết.
-4. Người lập ký xác nhận (SoftOTP).
-5. Hệ thống kiểm tra trường bắt buộc, sinh mã yêu cầu.
-6. Hệ thống lưu hồ sơ ở trạng thái `Đã chuyển bộ phận Mở truy cập`.
-7. Hệ thống gửi email đến Bộ phận Mở truy cập.
+3. Chọn Hệ thống (1 HT) → Chọn CSDL (1 CSDL).
+4. Chọn Ca truy cập (Ca 1: 0h-8h / Ca 2: 8h-20h / Ca 3: 20h-24h).
+5. Hệ thống tự fill "Thời gian yêu cầu" theo ca, không cho phép sửa.
+6. Nhập nội dung chi tiết (Mục đích/Lý do, Quyền trên đối tượng dữ liệu).
+7. Người lập ký xác nhận.
+8. Hệ thống kiểm tra trường bắt buộc + validation rules.
+9. Hệ thống sinh mã yêu cầu.
+10. Hệ thống lưu hồ sơ ở trạng thái `Đã chuyển bộ phận Mở truy cập`.
+11. Hệ thống gửi email notification đến Bộ phận mở truy cập.
+12. → Kết thúc scope lập yêu cầu, chuyển scope phê duyệt.
 
-> **Ghi chú:** Bước xác nhận đồng ý của người có thẩm quyền (Đơn vị yêu cầu + Đơn vị chủ quản ứng dụng) được thực hiện **thủ công** ngoài hệ thống (qua điện thoại, tin nhắn). Trên giao diện web, 2 ô xác nhận này **để trống**, không yêu cầu nhập. Người lập yêu cầu và người mở truy cập tự liên hệ cấp có thẩm quyền để xác nhận.
+## 6. Luồng 4: 04B-BGTK, 05B-HTKC (Phiếu bổ sung sau hoàn thành)
 
-## 6. Luồng riêng cho 04B-BGTK
+### 6.1 Luồng 04B-BGTK (DBA lập)
+
+**Điều kiện hiển thị:** Chỉ hiển thị đối với DBA (kiểm tra quyền).
+**Điều kiện lập:** Phiếu 04A-YCTK liên quan phải ở trạng thái "Hoàn thành".
 
 1. DBA đăng nhập bằng tài khoản AD.
 2. Chọn chức năng "Lập yêu cầu", mẫu 04B-BGTK.
-3. Hệ thống hiển thị danh sách mẫu 04A-YCTK đã được phê duyệt và hoàn thành cấp tài khoản nhưng **chưa có 04B tương ứng**.
-4. DBA chọn 1 phiếu 04A để liên kết.
-5. Hệ thống tự nạp thông tin từ 04A (Tên CSDL, danh sách chủ tài khoản, Loại tài khoản, Hình thức).
-6. DBA nhập thêm **UserID** cho từng chủ tài khoản.
-7. DBA ký xác nhận (SoftOTP) → hệ thống tự fill ô "Người bàn giao" = thông tin DBA đang đăng nhập.
-8. Hệ thống lưu hồ sơ ở trạng thái `Chờ ký nhận`.
-9. Hệ thống gửi email thông báo đến **tất cả chủ tài khoản** (lấy từ 04A) để ký nhận.
-10. Mỗi chủ tài khoản đăng nhập, ký nhận (SoftOTP) riêng **dòng của mình**.
-11. Khi người ký cuối cùng ký xong → hệ thống tự động fill ô "Người nhận bàn giao" = thông tin người dùng ký cuối cùng.
-12. Hệ thống chuyển trạng thái sang `Đã chuyển cấp quản lý` → tự động chuyển module phê duyệt (ngoài scope).
+3. Hệ thống hiển thị danh sách 04A-YCTK đã hoàn thành nhưng chưa có 04B-BGTK tương ứng.
+4. DBA chọn phiếu đang nợ.
+5. Hệ thống tự động fill nội dung từ 04A-YCTK:
+   - Tên hệ thống, Tên CSDL.
+   - Mã yêu cầu 04A liên quan.
+   - Thời gian bàn giao (ngày hiện tại).
+   - Đại diện BP quản trị CSDL (Cấp QL) — từ cấu hình.
+   - Người bàn giao (DBA) — user đăng nhập.
+   - Đại diện BP nhận bàn giao (Cấp QL) — lãnh đạo phòng người yêu cầu.
+   - Người nhận bàn giao — danh sách người dùng từ 04A.
+   - Chi tiết: Loại tài khoản, Phạm vi, Nội dung, Chủ tài khoản.
+   - **KHÔNG tự fill:** Tài khoản được cấp (UserID) — DBA nhập tay.
+6. DBA nhập thông tin tài khoản đã cấp + Địa điểm bàn giao.
+7. DBA ký xác nhận.
+8. Hệ thống kiểm tra trường bắt buộc + validation rules.
+9. Hệ thống sinh mã yêu cầu.
+10. Hệ thống lưu hồ sơ ở trạng thái `Chờ phê duyệt`.
+11. Hệ thống gửi email notification đến Lãnh đạo phòng quản trị CSDL.
+12. → Chuyển scope phê duyệt (Lãnh đạo phòng DBA duyệt).
+13. Sau khi duyệt → Trạng thái chuyển `Chờ ký nhận`.
+14. Hệ thống gửi email notification cho người dùng trong danh sách.
+15. Người dùng đăng nhập → Ký nhận dòng của mình (row-level locking, polling).
+16. Khi tất cả người dùng đã ký → Hệ thống tự động chuyển `Chờ phê duyệt` (Lãnh đạo phòng người dùng).
+17. → Kết thúc scope lập yêu cầu, chuyển scope phê duyệt lần 2.
 
-## 7. Trạng thái phiếu
+**Timeout ký nhận:** 3 ngày kể từ khi chuyển "Chờ ký nhận".
+- Hành động: Gửi email cho DBA, lãnh đạo phòng DBA, lãnh đạo phòng cán bộ cần ký.
+- KHÔNG hủy phiếu, giữ nguyên trạng thái "Chờ ký nhận".
 
-### 7.1. Trạng thái chung (01, 02, 03, 04A, 05A, 05B)
+### 6.2 Luồng 05B-HTKC (Người lập 05A lập)
 
-| Trạng thái | Mô tả |
-|---|---|
-| `Nháp` | Phiếu đã lưu nhưng chưa gửi |
-| `Chờ ký xác nhận` | Phiếu 01/04A chờ người dùng liên quan ký |
-| `Chờ kiểm tra` | Phiếu 02 đã gửi Bộ phận kiểm tra |
-| `Chờ phê duyệt` | Đã gửi lãnh đạo phê duyệt |
-| `Đã chuyển bộ phận Mở truy cập` | Riêng 05A, đã gửi bộ phận Mở truy cập |
-| `Bị từ chối` | Lãnh đạo/Bộ phận kiểm tra từ chối |
-| `Đã hủy` | Người lập hủy phiếu |
-| `Gửi lỗi` | Gửi thất bại do mạng truyền thông, cho phép gửi lại |
+**Điều kiện lập:** Phiếu 05A-YCKC liên quan phải ở trạng thái "Hoàn thành" (đã mở truy cập thành công).
 
-### 7.2. Trạng thái riêng mẫu 04B-BGTK
+1. Người lập đăng nhập bằng tài khoản AD.
+2. Chọn chức năng "Lập yêu cầu", mẫu 05B-HTKC.
+3. Hệ thống hiển thị các trường hợp cần bổ sung 05B:
+   - Gộp tự động các mẫu 05A chung Hệ thống + CSDL + Ngày + Ca thành 1 mục.
+   - Người dùng không cần chọn từng phiếu riêng lẻ.
+4. Người dùng chọn mục cần bổ sung.
+5. Hệ thống tự động fill thông tin:
+   - Mã yêu cầu: Lấy định dạng từ 05A đang nợ, trường "Lần" hiển thị tổng hợp (VD: Lan01-02-03). CSDL lưu thêm trường phân biệt loại phiếu (05A/05B).
+   - Danh sách bảng = union tất cả bảng từ các phiếu 05A trong ca.
+   - Thông tin chung: Hệ thống, CSDL, Ngày, Ca, Thời gian.
+6. Người lập nhập nội dung công việc đã thực hiện (mô tả chi tiết, câu lệnh) — bắt buộc.
+7. Người lập ký xác nhận.
+8. Hệ thống kiểm tra trường bắt buộc + validation rules.
+9. Hệ thống lưu hồ sơ ở trạng thái `Chờ phê duyệt`.
+10. Hệ thống gửi email notification đến Lãnh đạo phòng của người lập.
+11. → Kết thúc scope lập yêu cầu, chuyển scope phê duyệt.
 
-| Trạng thái | Mô tả |
-|---|---|
-| `Nháp` | DBA đã lưu nhưng chưa gửi |
-| `Chờ ký nhận` | Đã gửi, chờ chủ tài khoản ký nhận |
-| `Đã chuyển cấp quản lý` | Tất cả chủ TK đã ký, tự động chuyển module phê duyệt |
-| `Gửi lỗi` | Gửi thất bại do mạng |
+## 7. Hệ thống trạng thái phiếu (Scope lập yêu cầu)
 
-> **Ghi chú:** Trạng thái `Bị từ chối` được nhận từ module phê duyệt (module khác quản lý). Hệ thống nhận trạng thái từ module phê duyệt thông qua callback/event.
+| Trạng thái | Áp dụng cho | Mô tả | Chuyển tiếp |
+|---|---|---|---|
+| Nháp | Tất cả mẫu | Phiếu đã lưu, chưa ký, chưa gửi | → Chờ ký xác nhận / Chờ phê duyệt / Chờ kiểm tra / Đã chuyển BP Mở truy cập |
+| Chờ ký xác nhận | 01-YCTC, 04A-YCTK | Đã sinh mã, chờ người dùng chung ký dòng chi tiết | → Chờ phê duyệt / Đã hủy |
+| Chờ ký nhận | 04B-BGTK | Đã được lãnh đạo DBA duyệt, chờ người dùng ký nhận tài khoản | → Chờ phê duyệt (lần 2) |
+| Chờ kiểm tra | 02-YCCS, 03-YCCT | Đã ký, gửi bộ phận kiểm tra | → Scope phê duyệt |
+| Chờ phê duyệt | 01, 04A, 04B, 05B | Đã ký đầy đủ, chờ lãnh đạo phê duyệt | → Scope phê duyệt |
+| Đã chuyển BP Mở truy cập | 05A-YCKC | Gửi thẳng bộ phận mở truy cập | → Scope phê duyệt |
+| Đã hủy | Tất cả | Người lập hủy phiếu (không cần lý do) | Kết thúc |
+| Hoàn thành | 04B-BGTK | Tất cả người dùng đã ký nhận | Kết thúc |
 
-## 8. Quy tắc nghiệp vụ chung
+## 8. Validation Rules
 
+| # | Rule | Chi tiết | Áp dụng |
+|---|---|---|---|
+| 1 | Trường bắt buộc | Kiểm tra tất cả trường bắt buộc trước khi cho phép ký/gửi | Tất cả |
+| 2 | Chặn nợ 05B | Người dùng có phiếu 05A đã "Hoàn thành" quá 03 ngày mà chưa lập 05B → Chặn tất cả chức năng lập yêu cầu (trừ 05B). Chặn luôn trường hợp người khác thêm dòng cho người bị chặn vào phiếu 01 đang "Chờ ký xác nhận". Thông báo: "Bạn đang nợ phiếu 05B-HTKC quá hạn. Vui lòng hoàn thành trước khi lập yêu cầu mới." (kèm link đến mẫu 05B). Gỡ chặn khi hoàn thành tất cả 05B đang nợ. | Tất cả |
+| 3 | 1 HT + 1 CSDL | Mỗi phiếu chỉ được chọn 1 Hệ thống và 1 CSDL | 02, 03, 04A, 05A |
+| 4 | Phiếu gốc hoàn thành | Chỉ lập 04B/05B khi phiếu 04A/05A tương ứng ở trạng thái "Hoàn thành" | 04B, 05B |
+| 5 | Checksum file SQL | Hỗ trợ MD5 + SHA-256 (người dùng chọn loại). Luồng: Upload file → Hệ thống tự tính hash → Người dùng nhập checksum gốc → So sánh. Match = OK, cho tiếp. Không match = Báo lỗi "Mã kiểm tra không khớp", chặn gửi. Format validation: MD5=32 ký tự hex, SHA-256=64 ký tự hex. | 02, 03 |
+| 6 | Giới hạn file SQL | Tối đa 10MB | 02, 03 |
+| 7 | Format tên file SQL | Phải đúng định dạng `YYYYMMDD_BS_XXX.sql` | 02-YCCS |
+| 8 | Mẫu 03 - Nội dung/Script | Nếu không có file SQL → nội dung chi tiết tab đã chọn (Tạo mới/Thay đổi/Xóa) phải có dữ liệu. Nếu có file SQL → phải có mã checksum. | 03-YCCT |
+| 9a | Timeout 01-YCTC | Hết thời gian ca đã chọn. Khi người lập ký gửi, dòng chưa ký tự động bị xóa. | 01-YCTC |
+| 9b | Timeout 04A-YCTK | Trong ngày lập phiếu hoặc khi người lập ký gửi. Dòng chưa ký tự động bị xóa. | 04A-YCTK |
+| 9c | Timeout 04B ký nhận | 3 ngày kể từ khi chuyển "Chờ ký nhận" → Email cho DBA, lãnh đạo phòng DBA, lãnh đạo phòng cán bộ. KHÔNG hủy phiếu, giữ nguyên. | 04B-BGTK |
+| 10a | Trùng lặp 01-YCTC | Chặn khi trùng cả 4 nội dung: Hệ thống + CSDL + Đối tượng + Người dùng (trong cùng phiếu) | 01-YCTC |
+| 10b | Trùng lặp 04A-YCTK | Chặn trùng người dùng ở bảng chi tiết (trong cùng phiếu) | 04A-YCTK |
+| 11 | Thời gian tạo phiếu | Ngày + Ca: chỉ cho phép hiện tại hoặc tương lai, không được chọn quá khứ (trừ 04B, 05B — phiếu bổ sung) | Tất cả (trừ 04B, 05B) |
+| 12 | Concurrency | Row-level locking + Polling. Mỗi người thao tác dòng riêng, không conflict. Khi 1 người ký xong → các người khác đang mở phiếu thấy cập nhật. Người lập có quyền xóa dòng chưa ký. | 01, 04A, 04B |
+| 13 | Kiểm tra quyền | Kiểm tra quyền người dùng trước khi cho phép chọn mẫu. VD: 04B chỉ hiển thị cho DBA. | Tất cả |
+| 14 | Mẫu 01 - Quyền truy cập | Loại "Truy vấn" → chỉ SELECT (auto-checked, không cho bỏ). Loại "Chỉnh sửa" → multi-select từ SELECT/INSERT/UPDATE/DELETE (chọn ≥1). Khi đổi loại → cảnh báo reset quyền đã chọn. | 01-YCTC |
+| 15 | Không ký trùng | 1 người chỉ ký 1 lần trên 1 phiếu (1 dòng duy nhất) | 01, 04A, 04B |
+
+## 9. Quy tắc nghiệp vụ chung
+
+- Ngày lập yêu cầu = ngày hiện tại (dd/MM/yyyy), KHÔNG cho phép sửa (tất cả mẫu).
+- Thời gian truy cập/truy xuất tự fill theo Ca, KHÔNG cho phép sửa (01, 05A, 05B).
+- Thời gian cập nhật (02-YCCS): tự fill theo Ca, CHO PHÉP chỉnh sửa, KHÔNG được để trống.
+- Ca truy cập: Ca 1 (0h-8h) / Ca 2 (8h-20h) / Ca 3 (20h-24h).
 - Khi lập yêu cầu, hệ thống ràng buộc danh mục CSDL, người dùng với đơn vị chủ quản ứng dụng; chỉ cho phép chọn danh mục hợp lệ.
 - Cho phép lưu nháp và sửa lại phiếu nếu chưa gửi phê duyệt.
+- Cho phép gửi lại yêu cầu nếu yêu cầu bị gửi lỗi. Retry tự động 3 lần, mỗi lần cách nhau 5 giây khi gửi thất bại.
+- Cho phép hủy yêu cầu nếu chưa được phê duyệt (không cần lý do).
 - Sau khi gửi phê duyệt không được sửa nội dung.
-- Tất cả chữ ký trên hệ thống đều sử dụng **SoftOTP**.
+- Mẫu 06-ĐKNS: không thuộc hệ thống.
+- Mẫu 07-NKCV: tự sinh sau khi hoàn thành, không thuộc scope lập yêu cầu.
+- Tất cả phần thuộc scope phê duyệt/thực hiện: hiển thị để trống, read-only trên form lập yêu cầu (bao gồm: ô ký phê duyệt, kết quả thực hiện, phần DBA ghi, phần thực hiện mở truy cập).
+- Email notification: gửi tự động khi chuyển trạng thái.
 
-### 8.1. Quy tắc chặn nợ phiếu 05B-HTKC
+## 10. Quy tắc riêng mẫu 01-YCTC
 
-- Chặn không cho phép người sử dụng đang nợ phiếu 05B-HTKC lập phiếu yêu cầu mới (01-YCTC, 05A-YCKC).
-- Chặn luôn trường hợp người khác lập phiếu 01-YCTC mà trong danh sách chi tiết có người dùng đang nợ phiếu 05B.
-- Khi thêm người dùng đang nợ 05B vào danh sách chi tiết phiếu 01-YCTC → **chặn ngay** tại thời điểm thêm (inline validation), không cho thêm vào danh sách.
-- **Deadline:** 3 ngày làm việc tính từ thời điểm Bộ phận Mở truy cập điền và ký xác nhận mở quyền (do module khác quản lý, hệ thống nhận event từ module đó).
-- **Cảnh báo:** Hiển thị Toast notification khi đăng nhập + Banner trên trang chủ, **chỉ đối với user đang nợ phiếu**.
-- **Nội dung cảnh báo:** *"Bạn đang nợ phiếu 05B-HTKC cho yêu cầu [Mã 05A]. Hạn hoàn thành: [dd/MM/yyyy]. Vui lòng hoàn thành để tiếp tục lập yêu cầu mới."*
-
-### 8.2. Quy tắc hủy yêu cầu
-
-- Chỉ được hủy khi phiếu đang ở trạng thái: `Nháp`, `Chờ ký xác nhận`, `Chờ kiểm tra`.
-- **Không được hủy** khi phiếu ở trạng thái `Chờ phê duyệt`.
-- Khi hủy, **bắt buộc nhập lý do hủy**.
-- Phiếu bị từ chối: người lập không thể thao tác gì thêm trên phiếu đó (chỉ xem lại). Phải lập phiếu mới.
-
-### 8.3. Quy tắc gửi lại
-
-- Chỉ gửi lại trong trường hợp **gửi lỗi do mạng truyền thông** (trạng thái `Gửi lỗi`).
-- Trường hợp bị từ chối duyệt → hủy phiếu luôn, phải lập phiếu mới.
-- **Cơ chế retry tự động:** Khi gửi thất bại, hệ thống tự động retry **3 lần**, mỗi lần cách nhau **5 giây**. Sau 3 lần retry vẫn thất bại → chuyển trạng thái `Gửi lỗi`, hiển thị nút "Gửi lại" cho người dùng thao tác thủ công.
-
-### 8.4. Quy tắc mã yêu cầu
-
-- Format: `KýhiệuĐV_DDMMYYYY_Ca_Lần`
-- **Ca** và **Lần** được sinh tự động nhưng **cho phép người dùng thay đổi**.
-- Chỉ cho phép sửa phần **Ca** và **Lần**, không cho sửa ký hiệu đơn vị và ngày tháng năm.
-- Sau khi người dùng sửa, hệ thống **validate tính duy nhất ngay lập tức** (inline validation). Nếu mã bị trùng → hiển thị lỗi ngay để người dùng sửa.
-- Định dạng NgàyThángNăm: DDMMYYYY.
-- Ca, Lần theo định dạng số: 1, 2, 3...
-- Lần: Lần thứ mấy về việc lập yêu cầu truy cập trong ca.
-
-### 8.5. Quy tắc Ca và thời gian
-
-- Ca 1: 00:00 – 08:00
-- Ca 2: 08:00 – 20:00
-- Ca 3: 20:00 – 24:00
-- Khi người dùng chọn Ca, hệ thống **tự động fill thời gian Từ-Đến** theo khung giờ của ca đã chọn.
-- Người dùng có thể điều chỉnh thời gian trong phạm vi khung ca (không được vượt ngoài khung ca).
-
-## 9. Quy tắc riêng mẫu 01-YCTC
-
-- Người dùng có thể yêu cầu truy cập **nhiều CSDL** trên một phiếu và chỉ cần ký một lần.
-- Mỗi yêu cầu có thể dùng cho một hoặc nhiều người.
-- Phải chọn **Loại yêu cầu: Truy vấn hoặc Chỉnh sửa** (hiển thị trên tiêu đề phiếu: "Yêu cầu truy cập, truy xuất [truy vấn|chỉnh sửa] Cơ sở dữ liệu").
-- Trường hợp yêu cầu quyền vấn tin trên các bảng hoặc đối tượng đặc biệt, hạn chế truy cập, cần ghi rõ: Thông tin bảng, lý do yêu cầu.
-- Mỗi người dùng chỉ cần ký xác nhận một lần trên phần thông tin chung hoặc phần thông tin chi tiết.
-- Hệ thống tự động điền chữ ký cho phần thông tin chung và các dòng chi tiết liên quan.
-- Người yêu cầu và những người sử dụng chung phiếu phải ký xác nhận trước khi gửi lãnh đạo phê duyệt.
-- Phải có tối thiểu một dòng tại phần danh sách yêu cầu chi tiết.
+- Trường "Loại yêu cầu" (Truy vấn/Chỉnh sửa) áp dụng cho toàn bộ phiếu (tất cả dòng chi tiết).
+- Khi đổi loại yêu cầu → cảnh báo "Thay đổi loại yêu cầu sẽ reset quyền truy cập đã chọn" → Confirm → Reset.
+- Mục đích/Lý do nằm ở thông tin chung (1 trường duy nhất cho toàn bộ phiếu).
+- Mẫu 01-YCTC cho phép yêu cầu nhiều HT + CSDL trên 1 phiếu (mỗi dòng chi tiết có thể chọn HT/CSDL khác nhau).
+- Quyền truy cập: Multi-select Checkbox Group (không phải dropdown). Hiển thị trực quan 4 options.
+- Mỗi người dùng chỉ cần ký xác nhận một lần trên phần thông tin chi tiết.
 - Trường nội dung nào mà cán bộ đã ký xác nhận thì không được sửa lại nội dung.
-
-## 10. Quy tắc riêng mẫu 02-YCCS
-
-- Người kiểm tra thay đổi dữ liệu và người thực hiện thay đổi dữ liệu phải thuộc Đơn vị chủ quản ứng dụng.
-- Tên tệp SQL phải đúng định dạng `YYYYMMDD_BS_XXX.sql`; hệ thống kiểm tra đúng định dạng mới cho tải.
-- Nếu nhiều file cần gộp thành một.
-- Mã kiểm tra tính toàn vẹn (checksum) bắt buộc.
 
 ## 11. Quy tắc riêng mẫu 03-YCCT
 
-- Có 3 tab chi tiết: Tạo mới, Thay đổi, Xóa.
-- Có phần nội dung DBA ghi để đánh giá tác động ảnh hưởng và hệ thống liên quan.
-- Cho phép tải SQL Script và nhập mã kiểm tra.
-- Đối với Yêu cầu có liên quan đến nhiều Hệ thống thông tin thì phải có đầy đủ phê duyệt của người có thẩm quyền tại Đơn vị chủ quản ứng dụng phát sinh yêu cầu, cũng như tại các Đơn vị chủ quản ứng dụng có liên quan bị ảnh hưởng.
+- Có 3 tab chi tiết: Tạo mới, Thay đổi, Xóa. Loại yêu cầu phải chọn ít nhất 1.
+- Nếu không gửi file SQL Script → nội dung chi tiết tương ứng tab đã chọn phải có dữ liệu.
+- Nếu có file SQL Script → phải có mã kiểm tra checksum.
+- Có phần nội dung DBA ghi để đánh giá tác động ảnh hưởng và hệ thống liên quan (hiển thị để trống, read-only — thuộc scope phê duyệt).
+- Cho phép tải SQL Script và nhập mã kiểm tra. Tối đa 10MB.
 
-## 12. Quy tắc riêng mẫu 04A-YCTK
-
-- Mỗi phiếu yêu cầu chỉ sử dụng trên **01 CSDL duy nhất**.
-- Có thể có **nhiều người dùng** (nhiều tài khoản) trên cùng 1 phiếu.
-- Trường hợp Đơn vị yêu cầu là Đơn vị chủ quản ứng dụng thì chỉ cần xin xác nhận ở ô Đơn vị chủ quản ứng dụng.
-- Mỗi người dùng chỉ cần ký xác nhận một lần.
-- Hệ thống tự động điền chữ ký cho phần thông tin chung và các dòng chi tiết liên quan.
-- Người yêu cầu và những người sử dụng chung phiếu phải ký xác nhận trước khi gửi lãnh đạo phê duyệt.
-- Phải có tối thiểu một dòng tại phần danh sách yêu cầu chi tiết.
-- Trường nội dung nào mà cán bộ đã ký xác nhận thì không được sửa lại nội dung.
-
-## 13. Quy tắc riêng mẫu 04B-BGTK
-
-- DBA lập phiếu 04B sau khi cấp tài khoản thành công.
-- Phiếu 04B liên kết với phiếu 04A-YCTK tương ứng (chọn từ danh sách 04A chưa có 04B).
-- Hệ thống tự nạp thông tin từ 04A: Tên CSDL, danh sách chủ tài khoản, Loại tài khoản, Hình thức (Cấp mới/Đổi thuộc tính).
-- DBA chỉ cần nhập thêm **UserID** cho từng chủ tài khoản.
-- Trường "Phạm vi" = Tên CSDL (tự động lấy từ 04A).
-- Trường "Nội dung" = Cấp mới/Đổi thuộc tính (tự động lấy từ trường "Hình thức" trong 04A).
-- Ô "Người bàn giao" tự fill = thông tin DBA khi DBA ký xác nhận.
-- Ô "Người nhận bàn giao" tự fill = thông tin người dùng ký cuối cùng (khi tất cả chủ TK đã ký).
-- Mỗi chủ tài khoản ký nhận riêng dòng của mình.
-- Sau khi tất cả chủ TK ký xong → hệ thống tự chuyển lên cấp quản lý (ngoài scope).
-
-## 14. Quy tắc riêng mẫu 05A-YCKC
-
-- Mỗi phiếu yêu cầu truy cập, truy xuất CSDL khẩn cấp chỉ sử dụng trên **01 CSDL duy nhất**.
-- Trong một ca yêu cầu truy cập CSDL khẩn cấp, người yêu cầu có thể tạo **nhiều Yêu cầu 05A-YCKC** để xử lý công việc, ghi rõ số lần yêu cầu trong ca.
-- Trường hợp người yêu cầu chỉ cần quyền truy vấn toàn bộ dữ liệu được phép thì tích vào ô "Query all data only" → các quyền chi tiết (Select, Insert, Update, Delete) chuyển `enable=false`.
-- Nếu người yêu cầu muốn truy vấn dữ liệu các bảng đặc biệt thì cần ghi rõ tên bảng trong yêu cầu.
-
-## 15. Quy tắc riêng mẫu 05B-HTKC
-
-- Mỗi phiếu hoàn thành chỉ sử dụng trên **01 CSDL duy nhất**.
-- **1 file 05B-HTKC dùng để xác nhận cho nhiều yêu cầu 05A-YCKC** nhưng chỉ trong trường hợp các 05A này **chung 1 ca**.
-- Khi người lập chọn mẫu 05B-HTKC, hệ thống hiển thị danh sách **Ngày + Ca** mà người dùng có phát sinh 05A chưa có 05B tương ứng.
-- Người lập chọn 1 dòng (Ngày + Ca) → hệ thống **tự nạp tất cả nội dung** của các mẫu 05A trong ngày + ca đó vào phiếu 05B.
-- Các giá trị "Lần" tự sinh từ các mẫu 05A-YCKC đã phát sinh trong ca đó.
-- Dữ liệu từ 05A là **read-only**, người lập chỉ bổ sung phần "Mục đích/câu lệnh đã thực hiện".
-- Trường "Mục đích truy cập, truy xuất (mô tả chi tiết, câu lệnh đã thực hiện)": **1 ô chung** cho tất cả các lần 05A.
-- Với mỗi ca truy cập, truy xuất CSDL khẩn cấp phải hoàn thành một (01) Mẫu 05B-HTKC tương ứng.
-
-## 16. Scope và ranh giới module
-
-- **Trong scope:** Khởi tạo yêu cầu, lưu nháp, ký xác nhận (SoftOTP), gửi phê duyệt/gửi bộ phận Mở truy cập/gửi chủ TK ký nhận (04B). Dừng ở bước gửi thành công.
-- **Ngoài scope:**
-  - Luồng phê duyệt 3 bên (04A-YCTK): chỉ khởi tạo yêu cầu rồi chuyển sang module phê duyệt.
-  - Bước kiểm tra script (02-YCCS): chỉ dừng ở bước gửi đến Bộ phận kiểm tra.
-  - Xác nhận mở quyền (05A): do Bộ phận Mở truy cập quản lý ở module khác.
-  - Phần ký đại diện cấp quản lý 2 bên (04B): chuyển module phê duyệt sau khi tất cả chủ TK ký xong.
-  - Phần "Người kiểm tra" trên mẫu 05B: ngoài scope.
-  - Phần "Người thực hiện thay đổi dữ liệu" trên mẫu 02: ngoài scope.
-  - Nhận trạng thái `Bị từ chối` từ module phê duyệt (qua callback/event).
-  - Nhận event "hoàn thành mở quyền" từ module Mở truy cập để tính deadline 3 ngày nợ 05B.
-  - Nhận event "hoàn thành cấp tài khoản" từ module DBA để DBA lập 04B.
-- **Hiển thị trên form nhưng không xử lý:**
-  - Các ô ký phê duyệt trên form: **KHÔNG hiển thị** trên form lập yêu cầu. Giao toàn bộ cho module phê duyệt.
-
-## 17. Giao diện mẫu 01-YCTC
+## 12. Giao diện mẫu 01-YCTC
 
 ### Thông tin chung
 
-| Trường | Loại | Mô tả |
-|---|---|---|
-| Loại yêu cầu | Chọn | **Truy vấn** hoặc **Chỉnh sửa** (hiển thị trên tiêu đề phiếu) |
-| Mã yêu cầu | Tự động | `KýhiệuĐV_DDMMYYYY` |
-| Ca | Tự động + Cho phép sửa | 1, 2, 3 – Sinh tự động, cho phép thay đổi, validate trùng ngay |
-| Lần | Tự động + Cho phép sửa | 1, 2, 3... – Sinh tự động, cho phép thay đổi, validate trùng ngay |
-| Tên đơn vị yêu cầu | Tự động | Lấy từ thông tin đăng nhập |
-| Tên phòng hoặc tương đương | Tự động | Lấy từ thông tin đăng nhập/cấu hình |
-| Người yêu cầu | Tự động | Lấy từ user đăng nhập |
-| ĐTDĐ | Tự động | Lấy từ hồ sơ người dùng |
-| Ngày lập yêu cầu | Tự động | Ngày hiện tại (dd/MM/yyyy) |
-| Thời gian truy cập/truy xuất | Tự động fill theo Ca | Từ - Đến (dd/MM/yyyy HH:mm), tự fill khi chọn Ca, cho phép điều chỉnh trong phạm vi khung ca |
-| Mục đích/Lý do | Nhập | Bắt buộc |
-| Ký tên | SoftOTP | Sau khi ký thành công hiển thị ảnh chữ ký |
-| Danh sách Trưởng phòng/tương đương | Tự động | Lấy theo người dùng |
-| Lưu phiếu | Nút lệnh | Lưu nháp hoặc chuyển Chờ ký xác nhận |
-| Ký xác nhận & Gửi | Nút lệnh | Ký SoftOTP + Gửi phê duyệt |
+| Trường | Loại | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Loại yêu cầu | Dropdown | ✅ | Truy vấn / Chỉnh sửa — áp dụng toàn bộ phiếu, ở đầu phiếu |
+| Mã yêu cầu | Tự động | ✅ | Sinh khi lưu/gửi. Format: KýhiệuĐV_DDMMYYYYCa:Lần: |
+| Ca | Dropdown | ✅ | Ca 1 (0h-8h) / Ca 2 (8h-20h) / Ca 3 (20h-24h) |
+| Tên đơn vị yêu cầu | Tự động | ✅ | Lấy từ thông tin user đăng nhập |
+| Tên phòng hoặc tương đương | Tự động | ✅ | Lấy từ thông tin đăng nhập/cấu hình |
+| Người yêu cầu (Họ và tên) | Tự động | ✅ | Lấy từ thông tin user đăng nhập |
+| ĐTDĐ | Tự động | ✅ | Lấy từ hồ sơ người dùng |
+| Thời gian truy cập/truy xuất (Từ/Đến) | Tự động | ✅ | Fill theo ca đã chọn, KHÔNG cho phép sửa |
+| Ngày lập yêu cầu | Tự động | ✅ | Ngày hiện tại (dd/MM/yyyy), KHÔNG cho phép sửa |
+| Mục đích/Lý do yêu cầu truy cập | Nhập text | ✅ | 1 trường duy nhất cho toàn bộ phiếu (thông tin chung) |
+| Ký tên (người lập) | Ký điện tử (OTP) | ✅ | Khi ký gửi phê duyệt. Sau khi ký hiển thị ảnh chữ ký |
+| Danh sách Trưởng phòng/tương đương | Tự động | ✅ | Lấy theo người dùng |
+| Ô ký phê duyệt | Hiển thị | — | Để trống, read-only, chờ module phê duyệt |
 
-### Thông tin chi tiết (Danh sách yêu cầu)
+### Thông tin chi tiết (bảng — mỗi dòng 1 người dùng)
 
-| Trường | Loại | Mô tả |
-|---|---|---|
-| STT | Tự động | Số thứ tự |
-| Hệ thống thông tin | Chọn | Theo danh mục hợp lệ |
-| Đơn vị chủ quản ứng dụng | Tự động | Tự fill theo Hệ thống thông tin đã chọn |
-| CSDL | Chọn | Theo hệ thống/đơn vị chủ quản (cho phép nhiều CSDL trên 1 phiếu) |
-| Tên đối tượng | Nhập | Bảng/đối tượng dữ liệu |
-| Quyền truy cập | Chọn | Theo danh mục quyền |
-| Họ và tên | Chọn | Người sử dụng (**validate nợ 05B ngay khi thêm**) |
-| Ký tại mục chi tiết | SoftOTP | Nếu người lập và người truy cập là một thì không cần ký tại mục chi tiết |
+| Trường | Loại | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Hệ thống thông tin | Dropdown | ✅ | Cho phép chọn nhiều HT khác nhau trên 1 phiếu |
+| CSDL | Dropdown | ✅ | Theo HT đã chọn |
+| Tên đối tượng | Nhập text | ✅ | Bảng/đối tượng dữ liệu |
+| Quyền truy cập | Multi-select Checkbox | ✅ | SELECT, INSERT, UPDATE, DELETE. Logic: Loại "Truy vấn" → chỉ SELECT (auto-checked); Loại "Chỉnh sửa" → chọn ≥1 |
+| Họ và tên | Nhập/Tự động | ✅ | Nếu người dùng tự thêm dòng → tự fill tên |
+| Ký tên | Ký điện tử (OTP) | ✅ | Mỗi người ký dòng của mình. Nếu người lập và người truy cập là một thì không cần ký tại mục chi tiết |
 
-> **Lưu ý:** Người truy cập trong danh sách không có đủ và đúng thông tin thì không thực hiện cấp quyền truy cập.
+## 13. Giao diện mẫu 02-YCCS
 
-## 18. Giao diện mẫu 02-YCCS
+| Trường | Loại | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Tên hệ thống | Dropdown | ✅ | Chọn 1 HT duy nhất, ở đầu phiếu |
+| Tên CSDL | Dropdown | ✅ | Chọn 1 CSDL duy nhất, theo HT đã chọn |
+| Mã yêu cầu | Tự động | ✅ | Sinh khi gửi. Format: KýhiệuĐV_DDMMYYYYCa:Lần: |
+| Ca | Dropdown | ✅ | Ca 1 (0h-8h) / Ca 2 (8h-20h) / Ca 3 (20h-24h) |
+| Tên đơn vị yêu cầu | Tự động | ✅ | Lấy từ thông tin đăng nhập |
+| Tên phòng hoặc tương đương | Tự động | ✅ | Lấy từ thông tin đăng nhập/cấu hình |
+| Người yêu cầu | Tự động | ✅ | Lấy từ user đăng nhập |
+| ĐTDĐ | Tự động | ✅ | Lấy từ hồ sơ người dùng |
+| Ngày lập yêu cầu | Tự động | ✅ | Ngày hiện tại (dd/MM/yyyy), KHÔNG cho phép sửa |
+| Thời gian cập nhật (Bắt đầu/Kết thúc) | Tự động + Cho sửa | ✅ | Tự fill theo ca, CHO PHÉP chỉnh sửa, KHÔNG được để trống |
+| Tên tệp cần chạy | Upload file | ✅ | Định dạng: YYYYMMDD_BS_XXX.sql. Tối đa 10MB. Nếu nhiều file cần gộp thành một |
+| Loại checksum | Dropdown | ✅ | MD5 / SHA-256 |
+| Mã kiểm tra tính toàn vẹn | Nhập text | ✅ | Hệ thống tự tính hash file → so sánh với mã người dùng nhập. MD5=32 hex, SHA-256=64 hex |
+| Nội dung chỉnh sửa dữ liệu | Nhập text | ✅ | Mô tả chi tiết |
+| Ký tên (người lập) | Ký điện tử (OTP) | ✅ | Sau khi ký hiển thị ảnh chữ ký |
+| Danh sách Người kiểm tra của đơn vị chủ quản ứng dụng | Tự động | ✅ | Lấy theo tên hệ thống |
+| Ô ký phê duyệt | Hiển thị | — | Để trống, read-only, chờ module phê duyệt |
+| Kết quả thực hiện | Hiển thị | — | Để trống, read-only (thuộc scope phê duyệt) |
 
-| Trường | Loại | Mô tả |
-|---|---|---|
-| Tên hệ thống | Chọn | Theo danh mục |
-| Tên cơ sở dữ liệu | Chọn | Theo hệ thống |
-| Mã yêu cầu | Tự động | `KýhiệuĐV_DDMMYYYY` |
-| Ca | Tự động + Cho phép sửa | 1, 2, 3 – Sinh tự động, cho phép thay đổi, validate trùng ngay |
-| Lần | Tự động + Cho phép sửa | 1, 2, 3... – Sinh tự động, cho phép thay đổi, validate trùng ngay |
-| Tên đơn vị yêu cầu | Tự động | Lấy từ thông tin đăng nhập |
-| Tên phòng hoặc tương đương | Tự động | Lấy từ thông tin đăng nhập/cấu hình |
-| Người yêu cầu | Tự động | Lấy từ user đăng nhập |
-| ĐTDĐ | Tự động | Lấy từ hồ sơ người dùng |
-| Ngày lập yêu cầu | Tự động | Ngày hiện tại (dd/MM/yyyy) |
-| Thời gian cập nhật | Tự động fill theo Ca | Từ - Đến (dd/MM/yyyy HH24), tự fill khi chọn Ca |
-| Nội dung chỉnh sửa dữ liệu | Nhập | Bắt buộc |
-| Tên tệp cần chạy | Tải file | Quy tắc `YYYYMMDD_BS_XXX.sql`; hệ thống kiểm tra đúng định dạng mới cho tải; nếu nhiều file cần gộp thành một |
-| Mã kiểm tra tính toàn vẹn | Nhập | Checksum – bắt buộc |
-| Ký tên | SoftOTP | Hiển thị ảnh chữ ký sau khi ký |
-| Danh sách Người kiểm tra | Tự động | Lấy theo tên hệ thống (thuộc Đơn vị chủ quản ứng dụng) |
-| Gửi | Nút lệnh | Gửi Bộ phận kiểm tra (trạng thái → `Chờ kiểm tra`) |
-
-> **Lưu ý:** Người kiểm tra thay đổi dữ liệu và người thực hiện thay đổi dữ liệu phải thuộc Đơn vị chủ quản ứng dụng.
-
-## 19. Giao diện mẫu 03-YCCT
+## 14. Giao diện mẫu 03-YCCT
 
 ### Thông tin chung
 
-| Trường | Loại | Mô tả |
-|---|---|---|
-| Tên hệ thống | Chọn | Theo danh mục |
-| Tên cơ sở dữ liệu | Chọn | Theo hệ thống |
-| Mã yêu cầu | Tự động | `KýhiệuĐV_DDMMYYYY` |
-| Ca | Tự động + Cho phép sửa | Sinh tự động, cho phép thay đổi, validate trùng ngay |
-| Lần | Tự động + Cho phép sửa | Sinh tự động, cho phép thay đổi, validate trùng ngay |
-| Tên đơn vị yêu cầu | Tự động | Lấy từ thông tin đăng nhập |
-| Tên phòng hoặc tương đương | Tự động | Lấy từ thông tin đăng nhập/cấu hình |
-| Người yêu cầu | Tự động | Lấy từ user đăng nhập |
-| ĐTDĐ | Tự động | Lấy từ hồ sơ người dùng |
-| Ngày lập yêu cầu | Tự động | Ngày hiện tại (dd/MM/yyyy) |
-| Ngày thực hiện dự kiến | Nhập | dd/MM/yyyy |
-| Đánh giá tác động ảnh hưởng | Hiển thị (read-only) | Phần nội dung DBA ghi: Hiệu năng, Các thành phần/hệ thống liên quan, Đánh giá khác |
-| Loại yêu cầu | Tab | Tạo mới / Thay đổi / Xóa |
-| Ký tên | SoftOTP | Hiển thị ảnh chữ ký sau khi ký |
-| Danh sách Trưởng phòng/tương đương | Tự động | Lấy theo người dùng |
-| Gửi phê duyệt | Nút lệnh | Gửi luồng xử lý |
+| Trường | Loại | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Tên hệ thống | Dropdown | ✅ | Chọn 1 HT duy nhất, ở đầu phiếu |
+| Tên CSDL | Dropdown | ✅ | Chọn 1 CSDL duy nhất |
+| Mã yêu cầu | Tự động | ✅ | Sinh khi gửi |
+| Ca | Dropdown | ✅ | Ca 1 / Ca 2 / Ca 3 |
+| Tên đơn vị yêu cầu | Tự động | ✅ | |
+| Tên phòng hoặc tương đương | Tự động | ✅ | |
+| Người yêu cầu | Tự động | ✅ | |
+| ĐTDĐ | Nhập/Tự động | ✅ | Số điện thoại liên hệ |
+| Ngày lập yêu cầu | Tự động | ✅ | Ngày hiện tại, KHÔNG cho phép sửa |
+| Ngày thực hiện dự kiến | Nhập (dd/MM/yyyy) | ❌ | Không bắt buộc |
+| Loại yêu cầu | Checkbox/Radio | ✅ | Tạo mới / Thay đổi / Xóa (chọn ít nhất 1) — quyết định tab nào hiển thị |
+| Đơn vị chủ quản ứng dụng | Nhập/Chọn | ✅ | |
+| Đơn vị chủ quản quản trị CSDL | Nhập/Chọn | ✅ | |
+| Ký tên (người lập) | Ký điện tử (OTP) | ✅ | |
+| Danh sách Trưởng phòng/tương đương | Tự động | ✅ | |
+| Phần DBA ghi (Đánh giá tác động) | Hiển thị | — | Để trống, read-only (thuộc scope phê duyệt, DBA nhập sau khi người lập gửi kiểm tra) |
+| Ô ký phê duyệt | Hiển thị | — | Để trống, read-only |
+| Kết quả thực hiện | Hiển thị | — | Để trống, read-only (thuộc scope phê duyệt) |
 
 ### Tab Tạo mới / Xóa
 
-**Table:**
-
-| Trường | Mô tả |
-|---|---|
-| STT | Số thứ tự |
-| Sở hữu bảng (Table Owner) | Owner |
-| Tên bảng (Table name) | Tên bảng |
-| Dự kiến tăng trưởng | Dung lượng dự kiến |
-| Vòng đời lưu trữ dữ liệu tại CSDL | Thời gian lưu trữ |
-| Cột xác định vòng đời | Cột dùng xác định vòng đời |
-| Đối tượng phụ thuộc table cần tạo | Các đối tượng phụ thuộc |
-
-**Cấu trúc table:**
-
-| Trường | Mô tả |
-|---|---|
-| STT | Số thứ tự |
-| Tên bảng | Tên bảng |
-| Tên cột | Tên cột |
-| Kiểu dữ liệu | Kiểu DL |
-| Cho phép Null | Y/N |
-| Giá trị mặc định | Default value |
-| Mô tả | Mô tả cột |
-
-**Index:**
-
-| Trường | Mô tả |
-|---|---|
-| STT | Số thứ tự |
-| Sở hữu (Owner) | Owner |
-| Tên Index | Tên index |
-| Sở hữu bảng (Table owner) | Table owner |
-| Tên bảng | Tên bảng |
-| Danh sách cột được đánh chỉ mục | Các cột index |
-
-**Synonym:**
-
-| Trường | Mô tả |
-|---|---|
-| STT | Số thứ tự |
-| Tên Synonym | Tên |
-| Kiểu | Public/Private |
-| Sở hữu bảng (Table owner) | Table owner |
-| Tên bảng | Tên bảng |
-| Mô tả | Mô tả |
-
-**Tạo mới/Xóa khác:**
-
-| Trường | Mô tả |
-|---|---|
-| STT | Số thứ tự |
-| Sở hữu (Owner) | Owner |
-| Tên | Tên đối tượng |
-| Kiểu | Kiểu đối tượng |
-| Mô tả | Mô tả |
-
-**SQL Script:**
-
-| Trường | Loại | Mô tả |
-|---|---|---|
-| File SQL Script | Tải file | File DDL đính kèm |
-| Mã kiểm tra (checksum) | Nhập | Bắt buộc |
-| Tên file | Tự động | Hiển thị tên file đã tải |
+- Table: Owner, Table name, dự kiến tăng trưởng, vòng đời lưu trữ, cột xác định vòng đời, đối tượng phụ thuộc.
+- Cấu trúc table: tên bảng, tên cột, kiểu dữ liệu, cho phép Null Y/N, giá trị mặc định, mô tả.
+- Index: Owner, tên index, table owner, tên bảng, danh sách cột đánh chỉ mục.
+- Synonym: tên synonym, kiểu Public/Private, table owner, tên bảng, mô tả.
+- Tạo mới/xóa khác: owner, tên, kiểu, mô tả.
+- SQL Script: file (tối đa 10MB), mã kiểm tra (MD5/SHA-256), tên file.
 
 ### Tab Thay đổi
 
-**Thêm cột bảng:**
+- Thêm cột bảng: owner, tên bảng, tên cột, loại dữ liệu, mô tả.
+- Sửa cột bảng: owner, tên bảng, tên cột, giá trị cũ, giá trị mới, mô tả.
+- Tạo lại index: owner, tên bảng, tên index cũ, cột trong index, index mới, cột đánh index mới.
+- Thay đổi khác: owner, tên, kiểu, mô tả.
+- SQL Script: file (tối đa 10MB), mã kiểm tra (MD5/SHA-256), tên file.
 
-| Trường | Mô tả |
-|---|---|
-| STT | Số thứ tự |
-| Sở hữu (Owner) | Owner |
-| Tên bảng | Tên bảng |
-| Tên cột | Tên cột mới |
-| Loại dữ liệu | Kiểu DL |
-| Mô tả | Mô tả |
-
-**Sửa cột bảng:**
-
-| Trường | Mô tả |
-|---|---|
-| STT | Số thứ tự |
-| Sở hữu (Owner) | Owner |
-| Tên bảng | Tên bảng |
-| Tên cột | Tên cột cần sửa |
-| Giá trị cũ cần thay đổi | Giá trị hiện tại |
-| Giá trị mới | Giá trị mới |
-| Mô tả | Mô tả |
-
-**Tạo lại index:**
-
-| Trường | Mô tả |
-|---|---|
-| STT | Số thứ tự |
-| Sở hữu (Owner) | Owner |
-| Tên bảng | Tên bảng |
-| Tên cũ Index | Index hiện tại |
-| Cột trong index | Cột hiện tại |
-| Index mới | Tên index mới |
-| Cột được đánh index mới | Cột mới |
-
-**Thay đổi khác:**
-
-| Trường | Mô tả |
-|---|---|
-| STT | Số thứ tự |
-| Sở hữu (Owner) | Owner |
-| Tên | Tên đối tượng |
-| Kiểu | Kiểu đối tượng |
-| Mô tả | Mô tả |
-
-**SQL Script:** (giống Tab Tạo mới)
-
-## 20. Giao diện mẫu 04A-YCTK
+## 15. Giao diện mẫu 04A-YCTK
 
 ### Thông tin chung
 
-| Trường | Loại | Mô tả |
+| Trường | Loại | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Tên hệ thống | Dropdown | ✅ | Chọn 1 HT duy nhất, ở đầu phiếu (thông tin chung) |
+| Tên CSDL | Dropdown | ✅ | Chọn 1 CSDL duy nhất (thông tin chung) |
+| Mã yêu cầu | Tự động | ✅ | Sinh khi lưu/gửi |
+| Ca | Dropdown | ✅ | Ca 1 / Ca 2 / Ca 3 |
+| Tên đơn vị yêu cầu | Tự động | ✅ | |
+| Tên phòng hoặc tương đương | Tự động | ✅ | |
+| Người yêu cầu | Tự động | ✅ | |
+| ĐTDĐ | Tự động | ✅ | |
+| Ngày lập yêu cầu | Tự động | ✅ | Ngày hiện tại, KHÔNG cho phép sửa |
+| Thời gian sử dụng (Bắt đầu/Kết thúc) | Nhập | ❌ | Không bắt buộc, cho phép để trống |
+| Lý do yêu cầu tạo mới/thay đổi thuộc tính | Nhập text | ✅ | |
+| Nội dung yêu cầu | Nhập text | ❌ | Mô tả chi tiết (không bắt buộc) |
+| Ký tên (người lập) | Ký điện tử (OTP) | ✅ | |
+| Danh sách Trưởng phòng/tương đương | Tự động | ✅ | |
+| Ô ký phê duyệt | Hiển thị | — | Để trống, read-only |
+
+### Thông tin chi tiết tài khoản (bảng — mỗi dòng 1 người dùng)
+
+| Trường | Loại | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Họ tên chủ tài khoản | Nhập/Tự động | ✅ | |
+| Loại tài khoản | Dropdown | ✅ | Truy vấn / Chỉnh sửa — mỗi dòng tự chọn riêng |
+| Hình thức | Dropdown | ✅ | Cấp mới / Đổi thuộc tính — mỗi dòng tự chọn riêng |
+| Ký tên | Ký điện tử (OTP) | ✅ | Mỗi người ký dòng của mình. Nếu người lập và người truy cập là một thì không cần ký tại mục chi tiết |
+
+**Lưu ý:** Logic ký tương tự mẫu 01-YCTC (Nhánh A/B, row-level locking, polling).
+
+## 16. Giao diện mẫu 04B-BGTK
+
+**Điều kiện hiển thị:** Chỉ hiển thị đối với DBA.
+
+### Màn hình chọn phiếu nợ
+
+| Trường | Loại | Ghi chú |
 |---|---|---|
-| Tên hệ thống | Chọn | Theo danh mục |
-| Tên cơ sở dữ liệu | Chọn | Theo hệ thống (**chỉ 1 CSDL duy nhất trên 1 phiếu**) |
-| Mã yêu cầu | Tự động | `KýhiệuĐV_DDMMYYYY` |
-| Ca | Tự động + Cho phép sửa | Sinh tự động, cho phép thay đổi, validate trùng ngay |
-| Lần | Tự động + Cho phép sửa | Sinh tự động, cho phép thay đổi, validate trùng ngay |
-| Tên đơn vị yêu cầu | Tự động | Lấy từ thông tin đăng nhập |
-| Tên phòng hoặc tương đương | Tự động | Lấy từ thông tin đăng nhập/cấu hình |
-| Người yêu cầu | Tự động | Lấy từ user đăng nhập |
-| ĐTDĐ | Tự động | Lấy từ hồ sơ người dùng |
-| Ngày lập yêu cầu | Tự động | Ngày hiện tại (dd/MM/yyyy) |
-| Thời gian sử dụng | Nhập | Bắt đầu - Kết thúc (dd/MM/yyyy HH24) |
-| Lý do yêu cầu [tạo mới\|thay đổi thuộc tính] tài khoản | Nhập | Bắt buộc |
-| Ký tên | SoftOTP | Hiển thị ảnh chữ ký sau khi ký |
-| Danh sách Trưởng phòng/tương đương | Tự động | Lấy theo người dùng |
-| Lưu phiếu | Nút lệnh | Lưu nháp hoặc chuyển Chờ ký xác nhận |
-| Ký xác nhận & Gửi | Nút lệnh | Ký SoftOTP + Gửi phê duyệt (chuyển module phê duyệt 3 bên) |
+| Danh sách 04A đang nợ | Danh sách chọn | Hiển thị các phiếu 04A hoàn thành chưa có 04B |
 
-### Thông tin chi tiết về tài khoản
+### Form nhập liệu (sau khi chọn phiếu)
 
-| Trường | Loại | Mô tả |
+| Trường | Loại | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Tên hệ thống | Tự động | ✅ | Fill từ 04A, read-only |
+| Tên CSDL | Tự động | ✅ | Fill từ 04A, read-only |
+| Mã yêu cầu 04B | Tự động | ✅ | Sinh mã mới |
+| Mã yêu cầu 04A liên quan | Tự động | ✅ | Fill từ 04A, read-only |
+| Thời gian bàn giao | Tự động | ✅ | Ngày hiện tại, KHÔNG cho phép sửa |
+| Địa điểm | Nhập text | ✅ | DBA nhập |
+| Đại diện BP quản trị CSDL (Cấp QL) | Tự động | ✅ | Lấy từ cấu hình |
+| Người bàn giao (DBA) | Tự động | ✅ | User đăng nhập |
+| Đại diện BP nhận bàn giao (Cấp QL) | Tự động | ✅ | Lãnh đạo phòng người yêu cầu (từ 04A) |
+| Người nhận bàn giao | Tự động | ✅ | Danh sách người dùng từ 04A |
+| Ký tên DBA (Người bàn giao) | Ký điện tử (OTP) | ✅ | DBA ký |
+| Ô ký phê duyệt | Hiển thị | — | Để trống, read-only |
+
+### Chi tiết bàn giao (bảng)
+
+| Trường | Loại | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Tài khoản (UserID) | Nhập text | ✅ | DBA nhập tay — KHÔNG tự fill |
+| Loại tài khoản (QUERY/UPDATE) | Tự động | ✅ | Fill từ 04A |
+| Phạm vi | Tự động | ✅ | Fill từ 04A |
+| Nội dung (cấp mới) | Tự động | ✅ | Fill từ 04A |
+| Chủ tài khoản | Tự động | ✅ | Fill từ 04A |
+| Ký nhận (Người dùng) | Ký điện tử (OTP) | ✅ | Mỗi người ký dòng mình (sau khi lãnh đạo DBA duyệt, trạng thái "Chờ ký nhận") |
+
+## 17. Giao diện mẫu 05A-YCKC
+
+| Trường | Loại | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Tên hệ thống | Dropdown | ✅ | Chọn 1 HT duy nhất |
+| Tên CSDL | Dropdown | ✅ | Chọn 1 CSDL duy nhất |
+| Mã yêu cầu | Tự động | ✅ | Sinh khi gửi |
+| Ca | Dropdown | ✅ | Ca 1 (0h-8h) / Ca 2 (8h-20h) / Ca 3 (20h-24h) |
+| Tên đơn vị yêu cầu | Tự động | ✅ | |
+| Tên phòng hoặc tương đương | Tự động | ✅ | |
+| Người yêu cầu | Tự động | ✅ | |
+| ĐTDĐ | Tự động | ✅ | |
+| Ngày lập yêu cầu | Tự động | ✅ | Ngày hiện tại, KHÔNG cho phép sửa |
+| Thời gian yêu cầu (Từ/Đến) | Tự động | ✅ | Fill theo ca, KHÔNG cho phép sửa |
+| Mục đích/Lý do yêu cầu truy cập, truy xuất | Nhập text | ✅ | Bắt buộc |
+| Quyền trên đối tượng dữ liệu | Chọn/Nhập | ✅ | "Query all data only" (nếu tích chọn → các quyền chi tiết disable) HOẶC chi tiết bảng: Owner, Table name, Select/Insert/Update/Delete |
+| Ký tên (người lập) | Ký điện tử (OTP) | ✅ | |
+| Phần "Thực hiện mở truy cập" | Hiển thị | — | Để trống, read-only. Gồm: Thời gian mở TC, Họ và tên, Ký tên, Lý do không thực hiện. Thuộc scope phê duyệt/thực hiện |
+| Ô ký phê duyệt | Hiển thị | — | Để trống, read-only |
+
+## 18. Giao diện mẫu 05B-HTKC
+
+### Màn hình chọn trường hợp cần bổ sung
+
+| Trường | Loại | Ghi chú |
 |---|---|---|
-| STT | Tự động | Số thứ tự |
-| Họ tên chủ tài khoản | Chọn/Nhập | Người sử dụng (có thể nhiều người trên 1 phiếu) |
-| Loại tài khoản | Chọn | Truy vấn (Query) / Chỉnh sửa (Update) |
-| Hình thức | Chọn | Cấp mới / Đổi thuộc tính |
-| Ký tại mục chi tiết | SoftOTP | Nếu người lập và người truy cập không phải là một |
+| Danh sách cần bổ sung 05B | Danh sách | Hệ thống gộp tự động các 05A chung HT + CSDL + Ngày + Ca thành 1 mục. Người dùng chọn mục, không cần chọn từng phiếu |
 
-## 21. Giao diện mẫu 04B-BGTK
+### Form nhập liệu (sau khi chọn)
 
-### Thông tin chung
+| Trường | Loại | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Tên hệ thống | Tự động | ✅ | Fill từ 05A, read-only |
+| Tên CSDL | Tự động | ✅ | Fill từ 05A, read-only |
+| Mã yêu cầu | Tự động | ✅ | Lấy định dạng từ 05A, trường "Lần" tổng hợp (VD: Lan01-02-03). CSDL lưu thêm trường phân biệt loại phiếu (05A/05B) |
+| Ca | Tự động | ✅ | Fill từ 05A, read-only |
+| Lần | Tự động | ✅ | Hiển thị tổng hợp: "Lần: 1, 2, 3" |
+| Tên đơn vị yêu cầu | Tự động | ✅ | |
+| Tên phòng hoặc tương đương | Tự động | ✅ | |
+| Người yêu cầu | Tự động | ✅ | |
+| ĐTDĐ | Tự động | ✅ | |
+| Ngày lập yêu cầu | Tự động | ✅ | Ngày hiện tại, KHÔNG cho phép sửa |
+| Thời gian yêu cầu (Từ/Đến) | Tự động | ✅ | Fill từ 05A, read-only |
+| Danh sách bảng đã yêu cầu | Tự động | ✅ | Union tất cả bảng từ các phiếu 05A trong ca. Cột: Owner, Table name, Select/Insert/Update/Delete |
+| Mục đích truy cập, truy xuất (mô tả chi tiết, câu lệnh thực hiện) | Nhập text | ✅ | Bắt buộc — người lập nhập nội dung công việc đã thực hiện |
+| Ký tên (người lập) | Ký điện tử (OTP) | ✅ | |
+| Xác nhận (ĐV chủ quản ứng dụng + ĐV yêu cầu) | Hiển thị | — | Để trống, read-only (thuộc scope phê duyệt) |
+| Ô ký phê duyệt | Hiển thị | — | Để trống, read-only |
 
-| Trường | Loại | Mô tả |
+## 19. Chức năng con: Đăng ký trước Yêu cầu chi tiết (Mẫu 01-YCTC)
+
+### 19.1 Mô tả chức năng
+
+Cho phép người dùng có quyền lập yêu cầu (requester) đăng ký trước thông tin chi tiết truy cập CSDL cho ngày + ca hiện tại hoặc tương lai. Khi người lập phiếu 01-YCTC chọn ca, hệ thống tự động nạp toàn bộ đăng ký trước phù hợp của tất cả người dùng cùng đơn vị vào bảng chi tiết phiếu.
+
+**Lợi ích:**
+- Tiết kiệm thời gian lập phiếu.
+- Người dùng chủ động đăng ký trước khi cần truy cập.
+- Giảm sai sót do nhập liệu thủ công.
+
+### 19.2 Vị trí giao diện
+
+- Nút/link phụ **"Đăng ký trước Yêu cầu chi tiết"** nằm bên trong card/button của mẫu 01-YCTC tại màn hình chọn mẫu.
+- Khi click → điều hướng sang trang "Đăng ký trước Yêu cầu chi tiết".
+
+### 19.3 Quyền truy cập
+
+- Bất kỳ người dùng nào có quyền lập yêu cầu (requester) đều có chức năng này.
+
+### 19.4 Giao diện trang "Đăng ký trước Yêu cầu chi tiết"
+
+#### 19.4.1 Danh sách đăng ký đã lưu
+
+Hiển thị danh sách các đăng ký đã lưu **của chính người dùng đang truy cập**. Phân trang 20 bản ghi/trang.
+
+| Cột hiển thị | Ghi chú |
+|---|---|
+| Ngày đăng ký | dd/MM/yyyy |
+| Ca | Ca 1 / Ca 2 / Ca 3 |
+| Loại yêu cầu | Truy vấn / Chỉnh sửa |
+| Hệ thống thông tin | |
+| CSDL | |
+| Bảng/Đối tượng | |
+| Quyền | SELECT, INSERT, UPDATE, DELETE |
+| Trạng thái | Chưa dùng / Chờ duyệt / Đã dùng / Hết hạn |
+| Thời điểm ký | dd/MM/yyyy HH:mm |
+| Hành động | Sửa / Xóa (chỉ khi trạng thái "Chưa dùng") |
+
+#### 19.4.2 Form đăng ký mới
+
+| Trường | Loại | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Loại yêu cầu | Dropdown | ✅ | Truy vấn / Chỉnh sửa — logic tương tự mẫu 01 |
+| Ngày đăng ký | Date picker | ✅ | Chỉ cho phép hiện tại hoặc tương lai (dd/MM/yyyy) |
+| Ca | Dropdown | ✅ | Ca 1 (0h-8h) / Ca 2 (8h-20h) / Ca 3 (20h-24h) |
+| Hệ thống thông tin | Dropdown | ✅ | Chọn từ danh mục |
+| CSDL | Dropdown | ✅ | Theo HT đã chọn |
+| Bảng/Đối tượng | Nhập text | ✅ | |
+| Quyền | Multi-select Checkbox | ✅ | Logic: Loại "Truy vấn" → chỉ SELECT (auto-checked); Loại "Chỉnh sửa" → chọn ≥1 từ SELECT/INSERT/UPDATE/DELETE |
+
+**Chức năng bổ sung:**
+- Nút **"Thêm dòng"**: Thêm dòng đăng ký mới (cùng form, nhiều dòng).
+- Nút **"Nhân bản"**: Copy dòng hiện tại sang ngày/ca khác (người dùng chọn ngày + ca đích).
+- Nút **"Lưu"**: Lưu tất cả dòng + Ký số OTP xác nhận → Lưu vào CSDL.
+
+#### 19.4.3 Form sửa đăng ký
+
+- Chỉ cho phép sửa khi trạng thái = "Chưa dùng".
+- Sau khi sửa → **yêu cầu ký số OTP lại** (vì nội dung đã thay đổi).
+- Cập nhật trường `signed_at` và `signature` mới.
+
+#### 19.4.4 Xóa đăng ký
+
+- Chỉ cho phép xóa khi trạng thái = "Chưa dùng".
+- Xóa vĩnh viễn (hard delete) khỏi CSDL.
+- Không cho phép xóa ở các trạng thái khác.
+
+### 19.5 Cấu trúc bảng CSDL
+
+**Tên bảng:** `pre_registration_request`
+
+| Cột | Kiểu | Mô tả |
 |---|---|---|
-| Mã yêu cầu 04A liên kết | Chọn | Danh sách 04A đã phê duyệt + hoàn thành cấp TK, chưa có 04B |
-| Tên hệ thống | Tự động | Lấy từ 04A đã chọn |
-| Tên cơ sở dữ liệu | Tự động | Lấy từ 04A đã chọn |
-| Ngày bàn giao | Tự động | Ngày hiện tại (dd/MM/yyyy) |
-| Người bàn giao | Tự động | Fill = DBA đang đăng nhập (sau khi ký SoftOTP) |
-| Người nhận bàn giao | Tự động | Fill = thông tin người dùng ký cuối cùng |
-| Ký tên (DBA) | SoftOTP | DBA ký xác nhận bàn giao | Hiển thị ảnh chữ ký sau khi ký |
-| Gửi ký nhận | Nút lệnh | Gửi cho chủ tài khoản ký nhận |
+| id | BIGINT (PK) | Auto-increment |
+| user_id | VARCHAR | Mã người dùng (từ AD) |
+| user_name | VARCHAR | Họ tên |
+| unit_code | VARCHAR | Mã đơn vị |
+| department | VARCHAR | Phòng/ban |
+| register_date | DATE | Ngày đăng ký (ngày truy cập) |
+| shift | INT | Ca (1/2/3) |
+| request_type | VARCHAR | Loại yêu cầu (Truy vấn/Chỉnh sửa) |
+| system_name | VARCHAR | Tên hệ thống |
+| database_name | VARCHAR | Tên CSDL |
+| object_name | VARCHAR | Bảng/Đối tượng |
+| access_rights | VARCHAR | Quyền (SELECT, INSERT, UPDATE, DELETE) |
+| signature | TEXT | Chữ ký số |
+| signed_at | TIMESTAMP | Thời điểm ký |
+| status | VARCHAR | Chưa dùng / Chờ duyệt / Đã dùng / Hết hạn |
+| request_id | VARCHAR (nullable) | Mã phiếu 01 đã nạp (nếu có) |
+| created_at | TIMESTAMP | Thời điểm tạo |
+| updated_at | TIMESTAMP | Thời điểm cập nhật |
 
-### Thông tin chi tiết (tự nạp từ 04A)
 
-| Trường | Loại | Mô tả |
+**Index:**
+- `idx_pre_reg_unit_date_shift` ON (unit_code, register_date, shift, status) — phục vụ truy vấn nạp tự động.
+- `idx_pre_reg_user` ON (user_id, status) — phục vụ hiển thị danh sách cá nhân.
+
+### 19.6 Hệ thống trạng thái bản ghi đăng ký trước
+
+| Trạng thái | Mô tả | Chuyển tiếp |
 |---|---|---|
-| STT | Tự động | Số thứ tự |
-| Tài khoản (UserID) | Nhập (DBA) | DBA nhập UserID đã cấp |
-| Loại tài khoản | Tự động | QUERY/UPDATE – lấy từ 04A |
-| Phạm vi | Tự động | Tên CSDL – lấy từ 04A |
-| Nội dung | Tự động | Cấp mới/Đổi thuộc tính – lấy từ trường "Hình thức" trong 04A |
-| Chủ tài khoản | Tự động | Họ tên – lấy từ 04A |
-| Ký tên (Chủ TK) | SoftOTP | Mỗi chủ TK ký nhận riêng dòng của mình | Hiển thị ảnh chữ ký sau khi ký |
+| Chưa dùng | Đăng ký mới, chưa được nạp vào phiếu nào | → Chờ duyệt / Hết hạn |
+| Chờ duyệt | Đã nạp vào phiếu 01, người lập đã ký gửi phê duyệt | → Đã dùng / Chưa dùng (nếu phiếu bị hủy) |
+| Đã dùng | Phiếu 01 hoàn thành mở truy cập thành công | Kết thúc |
+| Hết hạn | Ngày + ca đã qua mà chưa được nạp | Kết thúc |
 
-## 22. Giao diện mẫu 05A-YCKC
+**Logic chuyển trạng thái:**
+- Chưa dùng → **Chờ duyệt**: Khi phiếu 01 được người lập ký số gửi phê duyệt.
+- Chờ duyệt → **Đã dùng**: Khi phiếu 01 hoàn thành mở truy cập.
+- Chờ duyệt → **Chưa dùng**: Khi phiếu 01 bị hủy.
+- Chưa dùng → **Hết hạn**: Khi ngày + ca đã qua (cron job tự động kiểm tra).
 
-### Thông tin chung
+### 19.7 Logic nạp tự động vào phiếu 01-YCTC
 
-| Trường | Loại | Mô tả |
-|---|---|---|
-| Tên hệ thống | Chọn | Theo danh mục |
-| Tên cơ sở dữ liệu | Chọn | Theo hệ thống (**chỉ 1 CSDL duy nhất trên 1 phiếu**) |
-| Xác nhận đồng ý cho phép | Hiển thị (để trống) | Đơn vị yêu cầu + Đơn vị chủ quản ứng dụng – **để trống**, xác nhận thủ công ngoài hệ thống |
-| Mã yêu cầu | Tự động | `KýhiệuĐV_DDMMYYYY` |
-| Ca | Tự động + Cho phép sửa | Sinh tự động, cho phép thay đổi, validate trùng ngay |
-| Lần | Tự động + Cho phép sửa | Sinh tự động, cho phép thay đổi, validate trùng ngay |
-| Tên đơn vị yêu cầu | Tự động | Lấy từ thông tin đăng nhập |
-| Tên phòng hoặc tương đương | Tự động | Lấy từ thông tin đăng nhập/cấu hình |
-| Người yêu cầu | Tự động | Lấy từ user đăng nhập |
-| ĐTDĐ | Tự động | Lấy từ hồ sơ người dùng |
-| Ngày lập yêu cầu | Tự động | Ngày hiện tại (dd/MM/yyyy) |
-| Thời gian yêu cầu | Tự động fill theo Ca | Từ - Đến (dd/MM/yyyy HH24:mm), tự fill khi chọn Ca |
-| Mục đích/Lý do yêu cầu | Nhập | Bắt buộc |
-| Ký tên | SoftOTP | Hiển thị ảnh chữ ký sau khi ký |
-| Gửi chuyển bộ phận Mở truy cập | Nút lệnh | Gửi (trạng thái → `Đã chuyển bộ phận Mở truy cập`) |
+**Trigger:** Khi người lập phiếu 01-YCTC chọn "Ca" (sau khi đã chọn "Loại yêu cầu").
 
-### Quyền trên đối tượng dữ liệu
+**Quy trình:**
+1. Hệ thống truy vấn bảng `pre_registration_request` với điều kiện:
+   - `unit_code` = đơn vị của người lập.
+   - `register_date` = ngày hiện tại (ngày lập phiếu).
+   - `shift` = ca đã chọn.
+   - `status` = "Chưa dùng".
+   - Logic loại yêu cầu:
+     - Nếu người lập chọn **"Truy vấn"** → chỉ nạp bản ghi có `request_type` = "Truy vấn" (tức `access_rights` chỉ có SELECT).
+     - Nếu người lập chọn **"Chỉnh sửa"** → nạp toàn bộ bản ghi phù hợp ca (cả Truy vấn lẫn Chỉnh sửa).
+2. Nạp tất cả bản ghi phù hợp vào bảng chi tiết phiếu 01.
+3. Các dòng đã nạp hiển thị:
+   - Trạng thái **"Đã ký"** (tự fill chữ ký từ bản ghi đăng ký trước).
+   - **Không cho phép sửa/xóa** trên phiếu (vì đã ký số từ trước).
+4. Người lập vẫn có thể thêm dòng mới (nhập thủ công) bên cạnh các dòng đã nạp.
 
-| Trường | Loại | Mô tả |
-|---|---|---|
-| Query all data only | Checkbox | Nếu tích chọn → các quyền chi tiết bên dưới chuyển `enable=false` |
-| STT | Tự động | Số thứ tự |
-| Sở hữu (Owner) | Nhập | Owner |
-| Tên bảng (table name) | Nhập | Tên bảng |
-| Select | Checkbox | Quyền Select |
-| Insert | Checkbox | Quyền Insert |
-| Update | Checkbox | Quyền Update |
-| Delete | Checkbox | Quyền Delete |
+**Xử lý khi đổi "Loại yêu cầu":**
+- Nếu đổi từ "Chỉnh sửa" → "Truy vấn": Các dòng đăng ký trước có quyền INSERT/UPDATE/DELETE tự động bị xóa khỏi phiếu. Bản ghi đăng ký trước giữ nguyên trạng thái "Chưa dùng".
+- Cảnh báo: "Thay đổi loại yêu cầu sẽ xóa các dòng đăng ký trước không phù hợp khỏi phiếu" → Confirm → Thực hiện.
 
-## 23. Giao diện mẫu 05B-HTKC
+### 19.8 Validation Rules bổ sung
 
-### Bước chọn Ngày + Ca
+| # | Rule | Chi tiết | Áp dụng |
+|---|---|---|---|
+| 16 | Không đăng ký quá khứ | Ngày + Ca: chỉ cho phép hiện tại hoặc tương lai | Đăng ký trước |
+| 17 | Kiểm tra trùng lặp đăng ký | Chặn khi trùng: user_id + register_date + shift + system_name + database_name + object_name + access_rights | Đăng ký trước |
+| 18 | Chỉ sửa/xóa khi "Chưa dùng" | Không cho phép sửa/xóa bản ghi ở trạng thái khác "Chưa dùng" | Đăng ký trước |
+| 19 | Ký số lại khi sửa | Sau khi sửa nội dung đăng ký → yêu cầu ký OTP lại | Đăng ký trước |
+| 20 | Xóa vĩnh viễn | Xóa bản ghi khỏi CSDL (hard delete), chỉ khi status = "Chưa dùng" | Đăng ký trước |
+| 21 | Hết hạn tự động | Cron job kiểm tra: register_date + shift đã qua → chuyển status = "Hết hạn" | Đăng ký trước |
+| 22 | Nạp tự động | Chỉ nạp bản ghi status = "Chưa dùng". Không nạp "Chờ duyệt", "Đã dùng", "Hết hạn" | Phiếu 01 |
 
-| Trường | Loại | Mô tả |
-|---|---|---|
-| Danh sách Ngày + Ca | Chọn | Hệ thống hiển thị các Ngày + Ca mà người dùng có phát sinh 05A chưa có 05B. Người lập chọn 1 dòng (Ngày + Ca) |
+### 19.9 Verification bổ sung
 
-> Sau khi chọn, hệ thống **tự nạp tất cả nội dung** của các mẫu 05A trong ngày + ca đó vào phiếu 05B.
+- [ ] Đăng ký trước thành công + ký OTP.
+- [ ] Đăng ký cho ngày/ca tương lai.
+- [ ] Chặn đăng ký ngày/ca quá khứ.
+- [ ] Chặn đăng ký trùng lặp.
+- [ ] Nhân bản dòng sang ngày/ca khác.
+- [ ] Sửa đăng ký "Chưa dùng" → yêu cầu ký lại.
+- [ ] Xóa đăng ký "Chưa dùng" → xóa vĩnh viễn.
+- [ ] Không cho sửa/xóa khi trạng thái khác "Chưa dùng".
+- [ ] Nạp tự động khi lập phiếu 01 chọn ca: đúng đơn vị + ngày + ca + loại yêu cầu.
+- [ ] Dòng nạp hiển thị "Đã ký", không cho sửa/xóa trên phiếu.
+- [ ] Đổi loại yêu cầu "Chỉnh sửa" → "Truy vấn": xóa dòng không phù hợp, bản ghi giữ "Chưa dùng".
+- [ ] Phiếu 01 gửi phê duyệt → bản ghi chuyển "Chờ duyệt".
+- [ ] Phiếu 01 hoàn thành mở truy cập → bản ghi chuyển "Đã dùng".
+- [ ] Phiếu 01 bị hủy → bản ghi quay lại "Chưa dùng".
+- [ ] Cron job: bản ghi hết hạn tự động chuyển "Hết hạn".
+- [ ] Danh sách đăng ký hiển thị đúng (chỉ của người dùng đang truy cập).
 
-### Thông tin chung (tự nạp từ 05A – read-only trừ khi ghi chú khác)
+---
 
-| Trường | Loại | Mô tả |
-|---|---|---|
-| Tên hệ thống | Tự động (read-only) | Lấy từ 05A |
-| Tên cơ sở dữ liệu | Tự động (read-only) | Lấy từ 05A |
-| Mã yêu cầu | Tự động | `KýhiệuĐV_DDMMYYYY` – sinh cho phiếu 05B |
-| Ca | Tự động (read-only) | Lấy từ Ca đã chọn ở bước trên |
-| Lần | Tự động (read-only, nhiều giá trị) | Tự sinh từ các mẫu 05A đã phát sinh trong ca. Hiển thị: Lần 1, Lần 2... |
-| Tên đơn vị yêu cầu | Tự động | Lấy từ thông tin đăng nhập |
-| Tên phòng hoặc tương đương | Tự động | Lấy từ thông tin đăng nhập/cấu hình |
-| Người yêu cầu | Tự động | Lấy từ user đăng nhập |
-| ĐTDĐ | Tự động | Lấy từ hồ sơ người dùng |
-| Ngày lập yêu cầu | Tự động | Ngày hiện tại (dd/MM/yyyy) |
-| Thời gian yêu cầu | Tự động (read-only) | Từ - Đến, lấy từ các 05A liên quan |
-| Mục đích truy cập, truy xuất | Nhập (textarea) | Bắt buộc – **mô tả chi tiết, bao gồm câu lệnh đã thực hiện**. 1 ô chung cho tất cả các lần 05A |
-| Ký tên | SoftOTP | Hiển thị ảnh chữ ký sau khi ký |
-| Gửi phê duyệt | Nút lệnh | Gửi luồng xử lý |
-
-### Danh sách các bảng đã yêu cầu (tự nạp từ 05A – read-only)
-
-| Trường | Loại | Mô tả |
-|---|---|---|
-| Lần | Tự động | Lần tương ứng với 05A nào |
-| STT | Tự động | Số thứ tự |
-| Sở hữu (Owner) | Tự động (read-only) | Lấy từ 05A |
-| Tên bảng (table name) | Tự động (read-only) | Lấy từ 05A |
-| Select | Tự động (read-only) | Lấy từ 05A |
-| Insert | Tự động (read-only) | Lấy từ 05A |
-| Update | Tự động (read-only) | Lấy từ 05A |
-| Delete | Tự động (read-only) | Lấy từ 05A |
-
-## 24. Email Notification
-
-### 24.1. Email gửi Trưởng phòng/tương đương (phiếu 01, 03, 04A, 05B)
-
-- **Trigger:** Khi phiếu được gửi phê duyệt thành công (trạng thái → `Chờ phê duyệt`).
-- **Người nhận:** Trưởng phòng/tương đương của đơn vị yêu cầu.
-- **Subject:** `[Agribank - Truy cập CSDL] Yêu cầu phê duyệt phiếu {MãMẫuPhiếu} - {MãYêuCầu}`
-- **Body:**
-
-Kính gửi Anh/Chị {Tên Trưởng phòng},
-
-Hệ thống Truy cập CSDL thông báo có yêu cầu mới cần phê duyệt:
-
-    Mã yêu cầu: {MãYêuCầu}
-    Loại phiếu: {TênMẫuPhiếu}
-    Người lập: {HọTênNgườiLập}
-    Đơn vị: {TênĐơnVị}
-    Phòng: {TênPhòng}
-    Ngày lập: {dd/MM/yyyy}
-
-Vui lòng đăng nhập hệ thống để xem chi tiết và phê duyệt.
-
-Link: {URL_phiếu_yêu_cầu}
-
-Trân trọng, Hệ thống Truy cập CSDL - Agribank
-
-
-### 24.2. Email gửi Bộ phận kiểm tra (phiếu 02-YCCS)
-
-- **Trigger:** Khi phiếu 02 được gửi thành công (trạng thái → `Chờ kiểm tra`).
-- **Người nhận:** Người kiểm tra của đơn vị chủ quản ứng dụng (lấy theo tên hệ thống).
-- **Subject:** `[Agribank - Truy cập CSDL] Yêu cầu kiểm tra phiếu 02-YCCS - {MãYêuCầu}`
-- **Body:**
-
-Kính gửi Anh/Chị {Tên Người kiểm tra},
-
-Hệ thống Truy cập CSDL thông báo có yêu cầu chỉnh sửa dữ liệu cần kiểm tra:
-
-    Mã yêu cầu: {MãYêuCầu}
-    Người lập: {HọTênNgườiLập}
-    Đơn vị: {TênĐơnVị}
-    Hệ thống: {TênHệThống}
-    CSDL: {TênCSDL}
-    Ngày lập: {dd/MM/yyyy}
-    Tên tệp SQL: {TênTệp}
-
-Vui lòng đăng nhập hệ thống để kiểm tra SQL Script và xác nhận.
-
-Link: {URL_phiếu_yêu_cầu}
-
-Trân trọng, Hệ thống Truy cập CSDL - Agribank
-
-### 24.3. Email gửi Bộ phận Mở truy cập (phiếu 05A-YCKC)
-
-- **Trigger:** Khi phiếu 05A được gửi thành công (trạng thái → `Đã chuyển bộ phận Mở truy cập`).
-- **Người nhận:** Bộ phận Mở truy cập.
-- **Subject:** `[Agribank - Truy cập CSDL] Yêu cầu khẩn cấp mở truy cập - {MãYêuCầu}`
-- **Body:**
-
-Kính gửi Bộ phận Mở truy cập,
-
-Hệ thống Truy cập CSDL thông báo có yêu cầu truy cập KHẨN CẤP cần xử lý:
-
-    Mã yêu cầu: {MãYêuCầu}
-    Người yêu cầu: {HọTênNgườiLập}
-    Đơn vị: {TênĐơnVị}
-    Hệ thống: {TênHệThống}
-    CSDL: {TênCSDL}
-    Thời gian sử dụng: {TừGiờ} - {ĐếnGiờ} ngày {dd/MM/yyyy}
-    Lý do: {LýDo}
-
-Vui lòng đăng nhập hệ thống để xử lý mở quyền truy cập.
-
-Link: {URL_phiếu_yêu_cầu}
-
-Trân trọng, Hệ thống Truy cập CSDL - Agribank
-
-
-### 24.4. Email thông báo người dùng liên quan ký xác nhận (phiếu 01-YCTC, 04A-YCTK)
-
-- **Trigger:** Khi phiếu 01/04A được lưu ở trạng thái `Chờ ký xác nhận` (Nhánh A).
-- **Người nhận:** Người dùng liên quan (người sử dụng chung phiếu) cần ký xác nhận.
-- **Subject:** `[Agribank - Truy cập CSDL] Yêu cầu ký xác nhận phiếu {MãMẫuPhiếu} - {MãYêuCầu}`
-- **Body:**
-
-Kính gửi Anh/Chị {Tên người dùng liên quan},
-
-Anh/Chị {HọTênNgườiLập} đã lập phiếu yêu cầu truy cập CSDL có liên quan đến Anh/Chị. Vui lòng đăng nhập hệ thống để kiểm tra thông tin và ký xác nhận.
-
-    Mã yêu cầu: {MãYêuCầu}
-    Loại phiếu: {TênMẫuPhiếu}
-    Người lập: {HọTênNgườiLập}
-    Đơn vị: {TênĐơnVị}
-    Ngày lập: {dd/MM/yyyy}
-
-Link: {URL_phiếu_yêu_cầu}
-
-Trân trọng, Hệ thống Truy cập CSDL - Agribank
-
-
-### 24.5. Email gửi chủ tài khoản ký nhận (phiếu 04B-BGTK)
-
-- **Trigger:** Khi DBA ký xác nhận và gửi phiếu 04B thành công (trạng thái → `Chờ ký nhận`).
-- **Người nhận:** Tất cả chủ tài khoản (lấy từ 04A liên kết).
-- **Subject:** `[Agribank - Truy cập CSDL] Bàn giao tài khoản - Yêu cầu ký nhận {MãYêuCầu}`
-- **Body:**
-
-Kính gửi Anh/Chị {Tên chủ tài khoản},
-
-Bộ phận Quản trị CSDL đã hoàn thành cấp tài khoản theo yêu cầu và lập Biên bản bàn giao tài khoản. Vui lòng đăng nhập hệ thống để kiểm tra thông tin tài khoản và ký nhận.
-
-    Mã biên bản: {MãYêuCầu_04B}
-    Mã yêu cầu gốc (04A): {MãYêuCầu_04A}
-    Người bàn giao (DBA): {HọTênDBA}
-    CSDL: {TênCSDL}
-    Ngày bàn giao: {dd/MM/yyyy}
-
-Link: {URL_phiếu_04B}
-
-Trân trọng, Hệ thống Truy cập CSDL - Agribank
-
-
-## 25. Allowed Files
+## 20. Allowed Files
 
 - `src/main/java/.../request/**`
 - `src/main/java/.../workflow/RequestSubmissionService.java`
@@ -710,66 +629,61 @@ Trân trọng, Hệ thống Truy cập CSDL - Agribank
 - `src/main/resources/static/css/requests/**`
 - `src/test/java/.../request/**`
 
-## 26. Must Not Change
+## 21. Must Not Change
 
 - Không sửa màn hình Dashboard ngoài link/nút cần thiết.
 - Không sửa service AD/Email/OTP ngoài interface đã thống nhất.
 - Không sửa xử lý phê duyệt sau khi yêu cầu đã gửi, trừ phần khởi tạo bước đầu.
 
-## 27. Verification
+## 22. Verification
 
-- Lưu nháp từng mẫu phiếu (7 mẫu).
-- Ký xác nhận thành công bằng SoftOTP.
-- Gửi phiếu 01/04A với nhiều dòng chi tiết và nhiều người ký.
-- Chặn gửi nếu thiếu chữ ký người dùng chung phiếu.
-- Chặn gửi nếu không có dòng chi tiết với 01/04A.
-- Chặn lập phiếu mới nếu người dùng nợ 05B.
-- Chặn thêm người dùng nợ 05B vào danh sách chi tiết phiếu 01-YCTC (inline validation).
-- Mẫu 05A sau gửi vào trạng thái "Đã chuyển bộ phận Mở truy cập".
-- File SQL 02-YCCS kiểm tra đúng định dạng tên.
-- Validate mã yêu cầu trùng ngay khi sửa Ca/Lần (inline validation).
-- Retry tự động 3 lần (cách 5s) khi gửi lỗi mạng.
-- Hủy yêu cầu bắt buộc nhập lý do.
-- Email notification gửi đúng người nhận theo từng loại phiếu (5 loại).
-- Cảnh báo nợ 05B hiển thị Toast + Banner cho user đang nợ.
-- Mẫu 01-YCTC: phải chọn Loại yêu cầu (Truy vấn/Chỉnh sửa).
-- Mẫu 01-YCTC: cột Đơn vị chủ quản ứng dụng tự fill theo Hệ thống.
-- Mẫu 04A-YCTK: chỉ cho phép chọn 1 CSDL duy nhất.
-- Mẫu 04B-BGTK: DBA lập, liên kết 04A, tự nạp thông tin, DBA nhập UserID.
-- Mẫu 04B-BGTK: Mỗi chủ TK ký riêng dòng, người cuối fill ô Người nhận bàn giao.
-- Mẫu 05B-HTKC: chọn Ngày + Ca, hệ thống tự nạp 05A, dữ liệu read-only.
-- Mẫu 05B-HTKC: trường Mục đích phải mô tả chi tiết bao gồm câu lệnh đã thực hiện (1 ô chung).
-- Mẫu 03-YCCT: có trường chọn Tên hệ thống + Tên CSDL.
-- Chọn Ca → tự fill thời gian Từ-Đến theo khung ca.
+- [ ] Lưu nháp từng mẫu phiếu.
+- [ ] Ký xác nhận thành công bằng OTP.
+- [ ] Gửi phiếu 01/04A với nhiều dòng chi tiết và nhiều người ký.
+- [ ] Chặn gửi nếu thiếu chữ ký người dùng chung phiếu.
+- [ ] Chặn gửi nếu không có dòng chi tiết với 01/04A.
+- [ ] Chặn nợ 05B: quá 3 ngày → chặn lập yêu cầu + chặn thêm vào phiếu 01 chung. Thông báo đúng + link đến 05B.
+- [ ] Mẫu 05A sau gửi vào trạng thái "Đã chuyển bộ phận Mở truy cập".
+- [ ] File SQL 02-YCCS kiểm tra đúng định dạng tên (YYYYMMDD_BS_XXX.sql).
+- [ ] Lập 04B-BGTK từ 04A đã hoàn thành, kiểm tra auto-fill đúng.
+- [ ] Lập 05B-HTKC, kiểm tra gộp tự động các 05A chung HT+CSDL+Ngày+Ca.
+- [ ] Mã 05B hiển thị đúng format Lan01-02-03.
+- [ ] Timeout 01-YCTC: hết ca → dòng chưa ký bị xóa khi gửi.
+- [ ] Timeout 04A-YCTK: hết ngày → dòng chưa ký bị xóa khi gửi.
+- [ ] Timeout 04B-BGTK: 3 ngày → email notification gửi đúng người.
+- [ ] Checksum file SQL: match → OK; không match → chặn gửi.
+- [ ] Giới hạn file 10MB: vượt → báo lỗi.
+- [ ] Trùng lặp 01 (4 trường): chặn đúng.
+- [ ] Trùng lặp 04A (người dùng): chặn đúng.
+- [ ] Concurrency: nhiều người ký đồng thời trên 01/04A/04B → không conflict.
+- [ ] Kiểm tra quyền: 04B chỉ hiển thị cho DBA.
+- [ ] Chặn chọn ca/ngày quá khứ (trừ 04B, 05B).
+- [ ] Mẫu 01: logic Truy vấn → chỉ SELECT; Chỉnh sửa → multi-select.
+- [ ] Đổi loại yêu cầu 01 → cảnh báo reset → confirm → reset đúng.
+- [ ] 04B: tất cả người dùng ký nhận → tự động chuyển "Chờ phê duyệt" lần 2.
+- [ ] Mẫu 02: Thời gian cập nhật tự fill theo ca, cho phép sửa, không được để trống.
+- [ ] Tất cả phần read-only (ô ký phê duyệt, kết quả thực hiện, phần DBA ghi, phần thực hiện mở truy cập) hiển thị đúng, không cho nhập.
 
-## 28. Definition of Done
+## 23. Definition of Done
 
-- Hoàn thành form cho **7 mẫu phiếu** (01, 02, 03, 04A, 04B, 05A, 05B).
-- Có lưu nháp, sửa nháp, ký (SoftOTP), gửi, hủy (có lý do), gửi lại (chỉ khi gửi lỗi).
-- Có validate nghiệp vụ và validate giao diện (inline validation cho mã yêu cầu, chặn nợ 05B).
-- Có retry tự động 3 lần khi gửi lỗi mạng.
-- Có **5 loại email notification** với template chi tiết.
-- Có cảnh báo nợ 05B (Toast + Banner).
+- Hoàn thành form cho **7 mẫu phiếu** (01-YCTC, 02-YCCS, 03-YCCT, 04A-YCTK, 04B-BGTK, 05A-YCKC, 05B-HTKC).
+- Hoàn thành chức năng con "Đăng ký trước Yêu cầu chi tiết" cho mẫu 01-YCTC.
+- Có lưu nháp, sửa nháp, ký, gửi, hủy, gửi lại.
+- Có validate nghiệp vụ và validate giao diện.
 - Có test cho các luồng chính và lỗi nghiệp vụ quan trọng.
-- Nhận trạng thái từ module phê duyệt (callback/event).
-- Mẫu 04B: DBA lập, liên kết 04A, chủ TK ký nhận, tự chuyển cấp quản lý.
-- Mẫu 05B: Chọn Ngày + Ca, tự nạp 05A (read-only), 1 ô Mục đích chung.
 
 ---
 
-## Changelog
-Nội dung thay đổi
-**Sửa đổi mục 3 và 4 - Đưa luồng 01 sang chung với luồng 04A |
-**Bổ sung mục 6 - Luồng 04B-BGTK:** DBA lập, liên kết 04A, nhập UserID, ký SoftOTP, gửi chủ TK ký nhận, tự chuyển cấp quản lý |
-**Bổ sung mục 7.2 - Trạng thái riêng 04B:** Nháp, Chờ ký nhận, Đã chuyển cấp quản lý, Gửi lỗi |
-**Bổ sung mục 8.5 - Quy tắc Ca và thời gian:** Chọn Ca → tự fill thời gian Từ-Đến |
-**Bổ sung mục 13 - Quy tắc riêng 04B:** DBA lập, liên kết 04A, tự nạp thông tin, DBA nhập UserID, ô Người bàn giao/Người nhận tự fill |
-**Cập nhật mục 15 - Quy tắc riêng 05B:** Chọn Ngày + Ca, tự nạp 05A (read-only), 1 ô Mục đích chung cho tất cả lần |
-**Bổ sung mục 17 - Giao diện 01-YCTC:** Thêm cột Đơn vị chủ quản ứng dụng (tự fill theo Hệ thống) |
-**Bổ sung mục 19 - Giao diện 03-YCCT:** Thêm trường Tên hệ thống + Tên CSDL |
-**Bổ sung mục 21 - Giao diện 04B-BGTK:** Đầy đủ thông tin chung + chi tiết |
-**Cập nhật mục 23 - Giao diện 05B:** Bước chọn Ngày + Ca, dữ liệu read-only từ 05A |
-**Bổ sung mục 24.5 - Email 04B:** Template email gửi chủ TK ký nhận |
-**Cập nhật toàn bộ:** Thống nhất SoftOTP cho tất cả chữ ký|
-**Cập nhật mục 2:** Thêm mẫu 04B-BGTK vào danh sách, ghi rõ người lập |
-**Cập nhật mục 16 - Scope:** Bổ sung ranh giới cho 04B (ký đại diện cấp quản lý ngoài scope)
+## Giả định
+
+1. Hệ thống đã có sẵn danh mục Hệ thống + CSDL để dropdown.
+2. Hệ thống đã có email notification service.
+3. Cơ chế ký điện tử đã được xác định (OTP).
+4. Thông tin user (đơn vị, phòng ban, lãnh đạo) lấy từ AD/LDAP.
+
+## Rủi ro
+
+1. Concurrency polling interval chưa xác định cụ thể (cần xác định ở giai đoạn thiết kế kỹ thuật).
+2. Logic gộp 05A cho 05B phức tạp — cần test kỹ edge cases (VD: 05A bị hủy giữa chừng).
+3. Timeout 04B (3 ngày) — cần cron job/scheduler để kiểm tra và gửi email.
+4. Cron job hết hạn đăng ký trước — cần scheduler chạy định kỳ (VD: mỗi giờ hoặc mỗi ca).

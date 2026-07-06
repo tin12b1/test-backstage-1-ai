@@ -4,7 +4,7 @@
 
 Xây dựng phần mềm quản lý yêu cầu truy cập, truy xuất, chỉnh sửa dữ liệu, thay đổi cấu trúc CSDL, cấp mới/thay đổi thuộc tính tài khoản và xử lý truy cập khẩn cấp đối với CSDL.
 
-Hệ thống thay thế quy trình xử lý thủ công bằng quy trình điện tử có đăng nhập AD, lập phiếu, ký xác nhận bằng SoftOTP/OTP, phê duyệt theo vai trò, chuyển bộ phận xử lý, ghi nhận thời gian thực hiện, thông báo email và lưu nhật ký công việc.
+Hệ thống thay thế quy trình xử lý thủ công bằng quy trình điện tử có đăng nhập AD, lập phiếu, ký xác nhận bằng Google Authenticator (TOTP), phê duyệt theo vai trò, chuyển bộ phận xử lý, ghi nhận thời gian thực hiện, thông báo email và lưu nhật ký công việc.
 
 ## 2. Phạm vi nghiệp vụ
 
@@ -20,7 +20,7 @@ Hệ thống hỗ trợ các loại yêu cầu sau:
 | 6 | Hoàn thành truy cập khẩn cấp | 05B-HTKC |
 | 7 | Nhật ký công việc | 07-NKCV |
 
-> Ghi chú: Trong tài liệu nghiệp vụ có xuất hiện cả `01-YCCT` và `01-YCTC`. Khi triển khai cần thống nhất lại mã chính thức trước khi chốt enum trong code/database.
+
 
 ## 3. Các chức năng chính
 
@@ -30,7 +30,7 @@ Hệ thống hỗ trợ các loại yêu cầu sau:
 - Phê duyệt, kiểm tra, xác nhận của Trưởng phòng/tương đương, Người có thẩm quyền, Bộ phận kiểm tra, Bộ phận mở truy cập, Quản trị CSDL/DBA, Người thực hiện.
 - Tra cứu, báo cáo.
 - Cấu hình danh mục người dùng, CSDL, đơn vị, vai trò, trạng thái.
-- Tích hợp AD, SoftOTP/OTP và Email.
+- Tích hợp AD, Google Authenticator (TOTP) và Email.
 
 ## 4. Vai trò sử dụng
 

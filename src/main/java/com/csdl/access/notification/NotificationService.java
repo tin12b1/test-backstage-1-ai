@@ -58,6 +58,7 @@ public class NotificationService {
         });
     }
 
+    /** Lay danh sach email cua nguoi giu vai tro (loc theo don vi neu vai tro co rang buoc don vi). */
     private List<String> recipientEmails(RoleCode role, Long unitId) {
         List<String> emails = new ArrayList<>();
         Role roleEntity = roleRepository.findByCode(role.name()).orElse(null);
@@ -70,6 +71,7 @@ public class NotificationService {
                 continue;
             }
             userRepository.findById(ur.getUserId()).ifPresent(u -> {
+                // Chi them email hop le va tranh trung lap.
                 if (u.getEmail() != null && !emails.contains(u.getEmail())) {
                     emails.add(u.getEmail());
                 }
@@ -78,6 +80,7 @@ public class NotificationService {
         return emails;
     }
 
+    /** Dung noi dung mot thong bao email tu phieu, su kien va nguoi nhan; kem link mo phieu. */
     private WorkflowNotification build(AccessRequest r, NotificationEvent event,
                                        String toEmail, RoleCode targetRole, String fromUser) {
         WorkflowNotification n = new WorkflowNotification();

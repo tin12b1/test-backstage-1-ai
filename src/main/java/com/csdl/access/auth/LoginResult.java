@@ -16,9 +16,13 @@ public class LoginResult {
         CONNECTION_ERROR
     }
 
+    // Trang thai ket qua dang nhap
     private final Status status;
+    // Thong diep mo ta ket qua
     private final String message;
+    // Nguoi dung (chi co khi dang nhap thanh cong)
     private AppUser user;
+    // Danh sach vai tro active (chi co khi dang nhap thanh cong)
     private List<RoleCode> roles;
 
     public LoginResult(Status status, String message) {

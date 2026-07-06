@@ -66,3 +66,10 @@ Email thật sẽ báo lỗi kết nối SMTP (chưa có mail server) nhưng h�
 Mạng hiện chặn tải trực tiếp từ Maven Central (trả 503), nên tôi đã cấu hình mirror qua Google trong .mvn-settings.xml + 
 maven.config
  (kèm bỏ qua kiểm tra SSL của proxy). Đây là workaround cho máy này; khi mạng bình thường có thể xóa hai file đó.
+netstat -ano | findstr :8080
+ taskkill /F /PID 12345
+
+ set SPRING_PROFILES_ACTIVE=oracle
+set AD_MODE=esb
+set MAIL_PASSWORD=<mat_khau_smtp>   REM khong commit mat khau that; dat gia tri thuc khi chay
+mvn spring-boot:run

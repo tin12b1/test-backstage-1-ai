@@ -47,15 +47,20 @@ public class EsbOtpClient implements OtpClient {
 
     private static final Logger log = LoggerFactory.getLogger(EsbOtpClient.class);
 
+    /** Namespace phan Header dung chung tren truc (common header). */
     private static final String NS_HEADER = "http://www.agribank.com.vn/common/envelope/commonheader/1";
+    /** Namespace phan nghiep vu xac thuc. */
     private static final String NS_AUTHEN = "http://www.agribank.com.vn/entity/vn/authen/authensvcs/1";
 
+    /** URL endpoint cua dich vu SOAP tren truc. */
     @Value("${integration.otp.esb.endpoint}")
     private String endpoint;
 
+    /** Ma ung dung nguon (SourceAppID) khai bao voi truc. */
     @Value("${integration.otp.esb.source-app-id:EBANK}")
     private String sourceAppId;
 
+    /** UserId cap ung dung dung de dang nhap truc. */
     @Value("${integration.otp.esb.service-user-id:EBANK}")
     private String serviceUserId;
 
@@ -63,18 +68,23 @@ public class EsbOtpClient implements OtpClient {
     @Value("${integration.otp.esb.service-password:}")
     private String servicePassword;
 
+    /** Ma ham nghiep vu (FunctionCode) xac dinh dich vu VerifyOTP tren truc. */
     @Value("${integration.otp.esb.function-code:AUTH-VERIFYOTP-WS-OTP}")
     private String functionCode;
 
+    /** Phien ban dich vu khai bao trong Header. */
     @Value("${integration.otp.esb.service-version:1}")
     private String serviceVersion;
 
+    /** Loai giao dich (TransType) theo quy dinh cua dich vu OTP. */
     @Value("${integration.otp.esb.trans-type:5}")
     private String transType;
 
+    /** Loai thiet bi (DeviceTypeId) sinh OTP. */
     @Value("${integration.otp.esb.device-type-id:1}")
     private String deviceTypeId;
 
+    /** Loai xac thuc OTP (VerifyOTPType) theo quy dinh cua dich vu. */
     @Value("${integration.otp.esb.verify-otp-type:26}")
     private String verifyOtpType;
 
@@ -82,14 +92,18 @@ public class EsbOtpClient implements OtpClient {
     @Value("${integration.otp.esb.soap-action:}")
     private String soapAction;
 
+    /** Thoi gian cho ket noi (ms). */
     @Value("${integration.otp.esb.connect-timeout-ms:5000}")
     private int connectTimeoutMs;
 
+    /** Thoi gian cho doc phan hoi (ms). */
     @Value("${integration.otp.esb.read-timeout-ms:10000}")
     private int readTimeoutMs;
 
+    /** RestTemplate dung chung, khoi tao lazy voi timeout da cau hinh. */
     private RestTemplate restTemplate;
 
+    /** Tra ve RestTemplate da cau hinh timeout; khoi tao lan dau khi can dung. */
     private RestTemplate restTemplate() {
         if (restTemplate == null) {
             SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -109,9 +123,11 @@ public class EsbOtpClient implements OtpClient {
         }
 
         String txId = UUID.randomUUID().toString();
+        // Dung XML request SOAP cho VerifyOTP.
         String requestXml = buildRequest(txId, otp);
 
         try {
+            // Chuan bi header SOAP (text/xml, SOAPAction neu co) va goi POST toi endpoint.
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.TEXT_XML);
             if (soapAction != null && !soapAction.isBlank()) {
@@ -136,10 +152,16 @@ public class EsbOtpClient implements OtpClient {
         }
     }
 
+    /**
+     * Dung chuoi XML request SOAP cho VerifyOTP.
+     * Sinh MessageId/TransactionId/Timestamp, ma hoa hexa mat khau he thong (UserPassword),
+     * dat cac tham so giao dich va gia tri OTP can xac thuc trong BodyReq.
+     */
     private String buildRequest(String txId, String otp) {
         String messageId = UUID.randomUUID().toString();
         String envTransactionId = String.valueOf(System.currentTimeMillis());
         String timestamp = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        // Ma hoa hexa mat khau he thong theo dinh dang bang tin yeu cau.
         String passwordHex = toHex(servicePassword);
 
         StringBuilder sb = new StringBuilder();

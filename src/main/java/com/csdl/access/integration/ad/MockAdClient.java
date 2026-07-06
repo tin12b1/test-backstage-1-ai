@@ -19,10 +19,13 @@ import java.util.Map;
 public class MockAdClient implements AdClient {
 
     private static final Logger log = LoggerFactory.getLogger(MockAdClient.class);
+    /** Mat khau mac dinh cho moi tai khoan trong moi truong gia lap. */
     private static final String DEFAULT_PASSWORD = "password";
 
+    /** Directory gia lap: key la username viet thuong -> ho so nguoi dung. */
     private final Map<String, AdUserProfile> directory = new HashMap<>();
 
+    /** Nap san mot so tai khoan mau tuong ung cac vai tro trong quy trinh. */
     public MockAdClient() {
         add("admin", "Quan tri he thong", "admin@csdl.local", "0900000000", "DV-CNTT", "Phong Quan tri");
         add("requester1", "Nguyen Van A", "requester1@csdl.local", "0900000001", "DV-KD", "Phong Kinh doanh");
@@ -35,6 +38,7 @@ public class MockAdClient implements AdClient {
         add("locked.user", "User Bi Khoa", "locked@csdl.local", "0900000099", "DV-KD", "Phong Kinh doanh");
     }
 
+    /** Them mot ho so nguoi dung vao directory gia lap (key theo username viet thuong). */
     private void add(String username, String fullName, String email, String mobile, String unit, String dept) {
         AdUserProfile p = new AdUserProfile(username, fullName, email, mobile);
         p.setUnit(unit);
@@ -47,23 +51,23 @@ public class MockAdClient implements AdClient {
         // Khong bao gio log gia tri password.
         log.debug("[MOCK-AD] authenticate username={}", username);
         if (username == null || username.isBlank()) {
-            return AdAuthResult.of(AdAuthResult.Status.USER_NOT_FOUND, "Tai khoan khong hop le");
+            return AdAuthResult.of(AdAuthResult.Status.USER_NOT_FOUND, "Tài khoản không hợp lệ");
         }
         String key = username.toLowerCase();
         if ("locked.user".equals(key)) {
-            return AdAuthResult.of(AdAuthResult.Status.USER_LOCKED, "Tai khoan da bi khoa tren AD");
+            return AdAuthResult.of(AdAuthResult.Status.USER_LOCKED, "Tài khoản đã bị khóa trên AD");
         }
-        if (!directory.containsKey(key)) {
-            return AdAuthResult.of(AdAuthResult.Status.USER_NOT_FOUND, "Tai khoan khong ton tai tren AD");
-        }
+        // Moi truong gia lap: chap nhan moi tai khoan AD voi mat khau dung cau hinh.
+        // Phan quyen thuc su do bang app_user/user_role quyet dinh (AuthService).
         if (!DEFAULT_PASSWORD.equals(password)) {
-            return AdAuthResult.of(AdAuthResult.Status.BAD_CREDENTIALS, "Sai mat khau");
+            return AdAuthResult.of(AdAuthResult.Status.BAD_CREDENTIALS, "Sai mật khẩu");
         }
         return AdAuthResult.success();
     }
 
     @Override
     public AdUserProfile getUserProfile(String username) {
+        // Tra ho so tu directory gia lap (null neu khong tim thay).
         if (username == null) {
             return null;
         }
