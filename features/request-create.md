@@ -189,7 +189,7 @@ b) **Hủy phiếu:**
 | 5 | Checksum file SQL | Hỗ trợ MD5 + SHA-256 (người dùng chọn loại). Luồng: Upload file → Hệ thống tự tính hash → Người dùng nhập checksum gốc → So sánh. Match = OK, cho tiếp. Không match = Báo lỗi "Mã kiểm tra không khớp", chặn gửi. Format validation: MD5=32 ký tự hex, SHA-256=64 ký tự hex. | 02, 03 |
 | 6 | Giới hạn file SQL | Tối đa 10MB | 02, 03 |
 | 7 | Format tên file SQL | Phải đúng định dạng `YYYYMMDD_BS_XXX.sql` | 02-YCCS |
-| 8 | Mẫu 03 - Nội dung/Script | Nếu không có file SQL → nội dung chi tiết tab đã chọn (Tạo mới/Thay đổi/Xóa) phải có dữ liệu. Nếu có file SQL → phải có mã checksum. | 03-YCCT |
+| 8 | Mẫu 03 - Nội dung/Script | 1 file SQL Script chung cho toàn bộ phiếu (có thể bao gồm cả Tạo mới/Thay đổi/Xóa hoặc chỉ 1 phần). Nếu có file SQL Script + checksum khớp → nội dung chi tiết các tab KHÔNG bắt buộc. Nếu KHÔNG có file SQL Script → nội dung chi tiết của tất cả tab đã chọn PHẢI có dữ liệu. | 03-YCCT |
 | 9a | Timeout 01-YCTC | Hết thời gian ca đã chọn. Khi người lập ký gửi, dòng chưa ký tự động bị xóa. | 01-YCTC |
 | 9b | Timeout 04A-YCTK | Trong ngày lập phiếu hoặc khi người lập ký gửi. Dòng chưa ký tự động bị xóa. | 04A-YCTK |
 | 9c | Timeout 04B ký nhận | 3 ngày kể từ khi chuyển "Chờ ký nhận" → Email cho DBA, lãnh đạo phòng DBA, lãnh đạo phòng cán bộ. KHÔNG hủy phiếu, giữ nguyên. | 04B-BGTK |
@@ -209,7 +209,12 @@ b) **Hủy phiếu:**
 - Ca truy cập: Ca 1 (0h-8h) / Ca 2 (8h-20h) / Ca 3 (20h-24h).
 - Khi lập yêu cầu, hệ thống ràng buộc danh mục CSDL, người dùng với đơn vị chủ quản ứng dụng; chỉ cho phép chọn danh mục hợp lệ.
 - Cho phép lưu nháp và sửa lại phiếu nếu chưa gửi phê duyệt.
-- Cho phép gửi lại yêu cầu nếu yêu cầu bị gửi lỗi. Retry tự động 3 lần, mỗi lần cách nhau 5 giây khi gửi thất bại.
+Xử lý gửi thất bại:
+   + Auto-save định kỳ 30 giây lên server (silent, dirty check).
+   + Local draft (sessionStorage): lưu nội dung form mỗi khi thay đổi (không lưu chữ ký/file).
+   + Khi gửi: Kiểm tra mạng → Kiểm tra session → Gửi. Nếu lỗi mạng: retry 3 lần × 5 giây (chỉ với network error). Nếu session hết hạn: dừng retry, thông báo đăng nhập lại.
+   + Khi mất mạng hoàn toàn: thông báo lỗi, giữ form, chờ mạng phục hồi.
+   + Khi đăng nhập lại: phát hiện local draft → hỏi khôi phục → fill form → người dùng review + gửi lại.
 - Cho phép hủy yêu cầu nếu chưa được phê duyệt (không cần lý do).
 - Sau khi gửi phê duyệt không được sửa nội dung.
 - Mẫu 06-ĐKNS: không thuộc hệ thống.
@@ -229,11 +234,12 @@ b) **Hủy phiếu:**
 
 ## 11. Quy tắc riêng mẫu 03-YCCT
 
-- Có 3 tab chi tiết: Tạo mới, Thay đổi, Xóa. Loại yêu cầu phải chọn ít nhất 1.
-- Nếu không gửi file SQL Script → nội dung chi tiết tương ứng tab đã chọn phải có dữ liệu.
-- Nếu có file SQL Script → phải có mã kiểm tra checksum.
+- Loại yêu cầu: Checkbox — chọn ít nhất 1, có thể chọn nhiều hoặc cả 3 (Tạo mới / Thay đổi / Xóa). Khi chọn mục nào → hiển thị phần nội dung tương ứng.
+- SQL Script là mục chung cho toàn bộ phiếu (1 file duy nhất, có thể bao gồm cả Tạo mới/Thay đổi/Xóa hoặc chỉ 1 phần trong 3).
+- Nếu có file SQL Script + checksum khớp → nội dung chi tiết các tab KHÔNG bắt buộc (có thể để trống).
+- Nếu KHÔNG có file SQL Script → nội dung chi tiết của tất cả tab đã chọn PHẢI có dữ liệu (ít nhất 1 dòng/trường mỗi tab).
 - Có phần nội dung DBA ghi để đánh giá tác động ảnh hưởng và hệ thống liên quan (hiển thị để trống, read-only — thuộc scope phê duyệt).
-- Cho phép tải SQL Script và nhập mã kiểm tra. Tối đa 10MB.
+- Tối đa 10MB cho file SQL Script.
 
 ## 12. Giao diện mẫu 01-YCTC
 
@@ -314,22 +320,42 @@ b) **Hủy phiếu:**
 | Ô ký phê duyệt | Hiển thị | — | Để trống, read-only |
 | Kết quả thực hiện | Hiển thị | — | Để trống, read-only (thuộc scope phê duyệt) |
 
-### Tab Tạo mới / Xóa
+### SQL Script (Mục chung — áp dụng cho toàn bộ phiếu)
 
-- Table: Owner, Table name, dự kiến tăng trưởng, vòng đời lưu trữ, cột xác định vòng đời, đối tượng phụ thuộc.
-- Cấu trúc table: tên bảng, tên cột, kiểu dữ liệu, cho phép Null Y/N, giá trị mặc định, mô tả.
-- Index: Owner, tên index, table owner, tên bảng, danh sách cột đánh chỉ mục.
-- Synonym: tên synonym, kiểu Public/Private, table owner, tên bảng, mô tả.
-- Tạo mới/xóa khác: owner, tên, kiểu, mô tả.
-- SQL Script: file (tối đa 10MB), mã kiểm tra (MD5/SHA-256), tên file.
+| Trường | Loại | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Tên tệp SQL Script | Upload file | Có điều kiện | Tối đa 10MB. File script có thể bao gồm toàn bộ nội dung Tạo mới/Thay đổi/Xóa hoặc chỉ 1 phần trong 3 |
+| Loại checksum | Dropdown | Có điều kiện | MD5 / SHA-256. Bắt buộc nếu có file |
+| Mã kiểm tra (Checksum) | Nhập text | Có điều kiện | Bắt buộc nếu có file. Hệ thống tự tính hash → so sánh |
 
-### Tab Thay đổi
+**Ràng buộc:**
+- Nếu **có file SQL Script** → checksum phải khớp. Nội dung chi tiết các tab bên dưới **KHÔNG bắt buộc**.
+- Nếu **KHÔNG có file SQL Script** → nội dung chi tiết của **tất cả tab đã chọn** PHẢI có dữ liệu.
 
-- Thêm cột bảng: owner, tên bảng, tên cột, loại dữ liệu, mô tả.
-- Sửa cột bảng: owner, tên bảng, tên cột, giá trị cũ, giá trị mới, mô tả.
-- Tạo lại index: owner, tên bảng, tên index cũ, cột trong index, index mới, cột đánh index mới.
-- Thay đổi khác: owner, tên, kiểu, mô tả.
-- SQL Script: file (tối đa 10MB), mã kiểm tra (MD5/SHA-256), tên file.
+### Tab Tạo mới (hiển thị khi chọn "Tạo mới")
+
+| Mục | Trường | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Table | Owner, Table name, dự kiến tăng trưởng, vòng đời lưu trữ, cột xác định vòng đời, đối tượng phụ thuộc | Có điều kiện | Bắt buộc nếu không có SQL Script |
+| Cấu trúc table | Tên bảng, tên cột, kiểu dữ liệu, cho phép Null (Y/N), giá trị mặc định, mô tả | Có điều kiện | Bắt buộc nếu không có SQL Script |
+| Index | Owner, tên index, table owner, tên bảng, danh sách cột đánh chỉ mục | Có điều kiện | |
+| Synonym | Tên synonym, kiểu Public/Private, table owner, tên bảng, mô tả | Có điều kiện | |
+| Tạo mới khác | Owner, tên, kiểu, mô tả | Có điều kiện | |
+
+### Tab Thay đổi (hiển thị khi chọn "Thay đổi")
+
+| Mục | Trường | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Thêm cột bảng | Owner, tên bảng, tên cột, loại dữ liệu, mô tả | Có điều kiện | Bắt buộc nếu không có SQL Script |
+| Sửa cột bảng | Owner, tên bảng, tên cột, giá trị cũ, giá trị mới, mô tả | Có điều kiện | |
+| Tạo lại index | Owner, tên bảng, tên index cũ, cột trong index, index mới, cột đánh index mới | Có điều kiện | |
+| Thay đổi khác | Owner, tên, kiểu, mô tả | Có điều kiện | |
+
+### Tab Xóa (hiển thị khi chọn "Xóa")
+
+| Mục | Trường | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| Nội dung lệnh xóa | Nhập text (textarea) | Có điều kiện | Bắt buộc nếu không có SQL Script. Mô tả chi tiết đối tượng cần xóa và lệnh xóa |
 
 ## 15. Giao diện mẫu 04A-YCTK
 
