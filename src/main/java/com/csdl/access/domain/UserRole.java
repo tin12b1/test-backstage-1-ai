@@ -25,6 +25,10 @@ public class UserRole {
     @Column(name = "unit_id")
     private Long unitId;
 
+    /** Pham vi phong/bo phan neu co. */
+    @Column(name = "department_id")
+    private Long departmentId;
+
     /** Pham vi he thong neu co. */
     @Column(name = "system_id")
     private Long systemId;

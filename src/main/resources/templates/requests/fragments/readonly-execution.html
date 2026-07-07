@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Fragment: readonly-execution
+  Phan hien thi "Ket qua thuc hien" (read-only, dung cho mau 02-YCCS, 03-YCCT)
+  Su dung: th:replace="requests/fragments/readonly-execution :: readonlyExecution"
+-->
+<div th:fragment="readonlyExecution">
+    <div class="card" style="margin-top:16px; opacity:0.7">
+        <h3>Ket qua thuc hien</h3>
+        <p class="text-muted">Phan nay do bo phan thuc hien dien khi hoan thanh cong viec.</p>
+
+        <div style="display:flex; gap:14px; flex-wrap:wrap">
+            <div class="form-row" style="flex:1 1 220px">
+                <label>Nguoi thuc hien</label>
+                <input type="text" readonly disabled class="form-control" placeholder=""/>
+            </div>
+            <div class="form-row" style="flex:1 1 180px">
+                <label>Ngay thuc hien</label>
+                <input type="date" readonly disabled class="form-control"/>
+            </div>
+            <div class="form-row" style="flex:1 1 180px">
+                <label>Thoi gian bat dau</label>
+                <input type="time" readonly disabled class="form-control"/>
+            </div>
+            <div class="form-row" style="flex:1 1 180px">
+                <label>Thoi gian ket thuc</label>
+                <input type="time" readonly disabled class="form-control"/>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label>Noi dung thuc hien</label>
+            <textarea readonly disabled rows="3" class="form-control"
+                      placeholder="(Do nguoi thuc hien dien)"></textarea>
+        </div>
+
+        <div class="form-row">
+            <label>Ket qua</label>
+            <input type="text" readonly disabled class="form-control" placeholder=""/>
+        </div>
+
+        <!-- O ky xac nhan thuc hien -->
+        <div style="display:flex; gap:24px; flex-wrap:wrap; margin-top:12px">
+            <div style="flex:1 1 200px; border:1px dashed #ccc; padding:12px; text-align:center; min-height:100px">
+                <label class="text-muted">Nguoi thuc hien ky</label>
+                <div style="height:50px; border:1px solid #eee; margin-top:8px; background:#f9f9f9"></div>
+                <small class="text-muted">Chua ky</small>
+            </div>
+            <div style="flex:1 1 200px; border:1px dashed #ccc; padding:12px; text-align:center; min-height:100px">
+                <label class="text-muted">Nguoi giam sat ky</label>
+                <div style="height:50px; border:1px solid #eee; margin-top:8px; background:#f9f9f9"></div>
+                <small class="text-muted">Chua ky</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

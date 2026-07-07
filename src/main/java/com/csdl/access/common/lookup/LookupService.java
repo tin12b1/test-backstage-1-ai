@@ -1,5 +1,6 @@
 package com.csdl.access.common.lookup;
 
+import com.csdl.access.common.enums.RoleCode;
 import com.csdl.access.domain.AccessRequest;
 import com.csdl.access.domain.AccessRightCatalog;
 import com.csdl.access.domain.AppUser;
@@ -132,15 +133,36 @@ public class LookupService {
         row.setRequestType(r.getRequestType() != null ? r.getRequestType().getDisplayName() : "");
         row.setRequesterName(userName(r.getRequesterUserId()));
         row.setRequesterUnit(unitName(r.getRequesterUnitId()));
-        row.setSystemName(systemName(r.getSystemId()));
-        row.setDatabaseName(databaseName(r.getDatabaseId()));
+
+        // 01-YCTC va 04A-YCTK: systemId/databaseId nam o dong chi tiet, header null
+        if (r.getSystemId() == null) {
+            boolean multiDetail = r.getRequestType() != null && r.getRequestType().requiresDetailLines();
+            row.setSystemName(multiDetail ? "Nhiều HT/CSDL" : "-");
+            row.setDatabaseName("");
+        } else {
+            row.setSystemName(systemName(r.getSystemId()));
+            row.setDatabaseName(databaseName(r.getDatabaseId()));
+        }
+
         row.setStatus(r.getStatus());
         row.setStatusLabel(r.getStatus() != null ? r.getStatus().getDisplayName() : "");
-        row.setCurrentActorRole(r.getCurrentActorRole());
+        row.setCurrentActorRole(roleDisplayName(r.getCurrentActorRole()));
         row.setStartTime(r.getStartTime());
         row.setEndTime(r.getEndTime());
         row.setSubmittedAt(r.getSubmittedAt());
         row.setCreatedAt(r.getCreatedAt());
         return row;
+    }
+
+    /** Tra ten hien thi cua vai tro tu ma RoleCode (tra "-" neu null hoac khong hop le). */
+    public String roleDisplayName(String roleCode) {
+        if (roleCode == null || roleCode.isBlank()) {
+            return "-";
+        }
+        try {
+            return RoleCode.valueOf(roleCode).getDisplayName();
+        } catch (IllegalArgumentException e) {
+            return roleCode;
+        }
     }
 }

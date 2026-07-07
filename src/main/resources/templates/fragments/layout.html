@@ -45,7 +45,9 @@
                 <a th:href="@{/requests/new}">
                     <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-file-plus'"></use></svg>Lap yeu cau</a>
                 <a th:href="@{/requests}">
-                    <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-files'"></use></svg>Yeu cau cua toi</a>
+                    <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-files'"></use></svg>Yeu cau cua toi
+                    <span class="badge badge-gold badge-nav" th:if="${sharedPendingSignCount != null and sharedPendingSignCount > 0}" th:text="${sharedPendingSignCount}"></span>
+                </a>
                 <a th:href="@{/work-items}">
                     <svg class="ico"><use th:href="@{/img/icons.svg} + '#ic-tasks'"></use></svg>Cong viec</a>
                 <a th:href="@{/search}">

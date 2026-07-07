@@ -12,6 +12,7 @@
 |---|---|
 | 05/07/2026 16:57 | Cập nhật toàn bộ theo bản đề xuất FINAL v1.0: Bổ sung mẫu 04B-BGTK; Tách luồng 05B ra khỏi luồng 02,03; Cập nhật luồng 01/04A/05A; Thêm luồng 04B+05B; Thêm hệ thống trạng thái; Thêm Validation Rules; Cập nhật giao diện tất cả mẫu; Cập nhật quy tắc nghiệp vụ; Cập nhật Verification + DoD |
 | 05/07/2026 20:25 | Bổ sung chức năng con "Đăng ký trước Yêu cầu chi tiết" cho mẫu 01-YCTC: Giao diện đăng ký trước, bảng CSDL pre_registration_request, logic nạp tự động, hệ thống trạng thái bản ghi, validation rules #16-#22, test cases bổ sung |
+| 06/07/2026 11:30 | Đồng bộ với docs/workflow-step-codes.md: Thêm bảng mapping Status Code ↔ Tên hiển thị (mục 7.1); Thêm mục 7.2 mô tả logic khởi tạo workflow khi SUBMIT (set variant, current_step_code, resolveNextActor) |
 
 ---
 
@@ -166,6 +167,57 @@ b) **Hủy phiếu:**
 11. → Kết thúc scope lập yêu cầu, chuyển scope phê duyệt.
 
 ## 7. Hệ thống trạng thái phiếu (Scope lập yêu cầu)
+
+### 7.1 Bảng mapping Status Code ↔ Tên hiển thị
+
+> Tham chiếu: `docs/workflow-step-codes.md` mục 2 "Trạng thái đặc biệt".
+
+| Status Code | Tên hiển thị | Áp dụng cho | Ghi chú |
+|---|---|---|---|
+| `DRAFT` | Nháp | Tất cả mẫu | Phiếu đã lưu, chưa ký, chưa gửi |
+| `PENDING_SIGN` | Chờ ký xác nhận | 01-YCTC, 04A-YCTK | Đã sinh mã, chờ người dùng chung ký dòng chi tiết |
+| `PENDING_RECEIPT` | Chờ ký nhận | 04B-BGTK | Đã được lãnh đạo DBA duyệt, chờ người dùng ký nhận tài khoản |
+| `PENDING_CHECK` | Chờ kiểm tra | 02-YCCS, 03-YCCT | Đã ký, gửi bộ phận kiểm tra. `current_step_code` = step đầu tiên (VD: `02_I_01` hoặc `02_E_01`) |
+| `PENDING_APPROVAL` | Chờ phê duyệt | 01, 04A, 04B, 05B | Đã ký đầy đủ, chờ lãnh đạo phê duyệt. `current_step_code` = step đầu tiên |
+| `PENDING_ACCESS_TEAM` | Đã chuyển BP Mở truy cập | 05A-YCKC | Gửi thẳng bộ phận mở truy cập. `current_step_code` = `05A_01` |
+| `RETURNED` | Chuyển trả | Tất cả | Bị chuyển trả, chờ requester sửa lại |
+| `CANCELLED` | Đã hủy | Tất cả | Người lập hủy phiếu (không cần lý do) |
+| `COMPLETED` | Hoàn thành | Tất cả | Đã hoàn thành toàn bộ luồng |
+
+### 7.2 Logic khởi tạo Workflow khi SUBMIT
+
+> Tham chiếu: `docs/workflow-step-codes.md` mục 3 "Quy tắc xác định Variant" và mục 9.1 "Module Request — Khi SUBMIT".
+
+Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP Mở truy cập", module Request thực hiện tuần tự:
+
+1. **Xác định variant (I/E):**
+   - Lấy `owner_unit_id` từ `information_system` (đơn vị chủ quản ứng dụng).
+   - Nếu `requester_unit_id == owner_unit_id` → variant = `I` (Internal).
+   - Nếu `requester_unit_id != owner_unit_id` → variant = `E` (External).
+   - Luồng 03-YCCT, 05A-YCKC: không có variant (chỉ 1 luồng duy nhất).
+
+2. **Set `current_step_code`:** Theo format `{MÃ_MẪU}_{VARIANT}_{01}` hoặc `{MÃ_MẪU}_{01}` (nếu không có variant).
+   - Ví dụ: 01-YCTC Internal → `01_I_01`; 02-YCCS External → `02_E_01`; 05A → `05A_01`.
+
+3. **Set `at_requester_phase`:** Theo bảng mapping tại `workflow-step-codes.md` mục 7.
+   - Variant `I` → luôn `false`.
+   - Variant `E`, step 01/02 → `true` (đang ở đơn vị yêu cầu).
+
+4. **Set `owner_unit_id`:** Đơn vị chủ quản ứng dụng (từ `information_system`).
+
+5. **Set `owner_db_unit_id`:** Đơn vị chủ quản CSDL (từ `database_catalog`) — chỉ áp dụng cho 03, 04A.
+
+6. **Gọi `resolveNextActor()`:** Xác định actor xử lý bước đầu tiên → set `current_actor_type`, `current_actor_id`, `current_actor_role`, `current_unit_id`.
+
+7. **Set `status`:** Theo bảng mapping mục 7.1:
+   - 01, 04A (Nhánh B), 04B, 05B → `PENDING_APPROVAL`
+   - 01, 04A (Nhánh A lưu chờ ký) → `PENDING_SIGN`
+   - 02, 03 → `PENDING_CHECK`
+   - 05A → `PENDING_ACCESS_TEAM`
+
+8. **Ghi `workflow_history`:** action = `SUBMIT`, step_code = step đầu tiên.
+
+### 7.3 Bảng trạng thái (tham chiếu nhanh)
 
 | Trạng thái | Áp dụng cho | Mô tả | Chuyển tiếp |
 |---|---|---|---|

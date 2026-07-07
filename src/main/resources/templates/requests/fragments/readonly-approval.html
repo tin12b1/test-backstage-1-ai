@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Fragment: readonly-approval
+  Phan hien thi cac o ky phe duyet (read-only, placeholder cho tat ca mau phieu)
+  Su dung: th:replace="requests/fragments/readonly-approval :: readonlyApproval"
+-->
+<div th:fragment="readonlyApproval">
+    <div class="card" style="margin-top:16px; opacity:0.7">
+        <h3>Phe duyet</h3>
+        <p class="text-muted">Phan nay do nguoi phe duyet dien khi xu ly yeu cau.</p>
+
+        <div style="display:flex; gap:24px; flex-wrap:wrap">
+            <!-- Truong phong -->
+            <div style="flex:1 1 200px; border:1px dashed #ccc; padding:12px; text-align:center; min-height:120px">
+                <label class="text-muted">Truong phong</label>
+                <div style="height:60px; border:1px solid #eee; margin-top:8px; background:#f9f9f9"></div>
+                <small class="text-muted">Chua ky</small>
+            </div>
+
+            <!-- Nguoi co tham quyen -->
+            <div style="flex:1 1 200px; border:1px dashed #ccc; padding:12px; text-align:center; min-height:120px">
+                <label class="text-muted">Nguoi co tham quyen</label>
+                <div style="height:60px; border:1px solid #eee; margin-top:8px; background:#f9f9f9"></div>
+                <small class="text-muted">Chua ky</small>
+            </div>
+
+            <!-- Kiem tra -->
+            <div style="flex:1 1 200px; border:1px dashed #ccc; padding:12px; text-align:center; min-height:120px">
+                <label class="text-muted">Kiem tra</label>
+                <div style="height:60px; border:1px solid #eee; margin-top:8px; background:#f9f9f9"></div>
+                <small class="text-muted">Chua ky</small>
+            </div>
+
+            <!-- Thuc hien -->
+            <div style="flex:1 1 200px; border:1px dashed #ccc; padding:12px; text-align:center; min-height:120px">
+                <label class="text-muted">Thuc hien</label>
+                <div style="height:60px; border:1px solid #eee; margin-top:8px; background:#f9f9f9"></div>
+                <small class="text-muted">Chua ky</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -8,7 +8,7 @@
 BEGIN
   FOR t IN (
     SELECT column_value AS tname FROM TABLE(sys.odcivarchar2list(
-      'ACCESS_REGISTRATION',
+      'PRE_REGISTRATION_REQUEST',
       'WORK_LOG_07',
       'EMERGENCY_COMPLETION_LINK',
       'EMAIL_QUEUE',

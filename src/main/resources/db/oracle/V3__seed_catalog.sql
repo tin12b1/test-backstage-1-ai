@@ -300,14 +300,14 @@ INSERT ALL
   INTO user_role (user_id, role_id, unit_id, department_id, system_id, active) VALUES (34, 6, 1, 1, NULL, 1)
 SELECT 1 FROM dual;
 
--- ===== Du lieu dang ky mau (man hinh 01YCTC_Dangky) =====
+-- ===== Du lieu dang ky truoc mau (man hinh 01YCTC_Dangky) =====
 INSERT ALL
-  INTO access_registration (requester_user_id, system_id, database_id, object_name, access_rights, shift_no, from_date, to_date, signed, created_at)
-    VALUES (2, 1, 1, 'All Schema', 'SELECT,INSERT,UPDATE,DELETE', 2, TRUNC(SYSDATE), TRUNC(SYSDATE), 1, SYSTIMESTAMP)
-  INTO access_registration (requester_user_id, system_id, database_id, object_name, access_rights, shift_no, from_date, to_date, signed, created_at)
-    VALUES (3, 1, 1, 'All Schema', 'SELECT',                      2, TRUNC(SYSDATE), TRUNC(SYSDATE), 1, SYSTIMESTAMP)
-  INTO access_registration (requester_user_id, system_id, database_id, object_name, access_rights, shift_no, from_date, to_date, signed, created_at)
-    VALUES (3, 2, 2, 'All Schema', 'SELECT,INSERT,UPDATE,DELETE', 2, TRUNC(SYSDATE), TRUNC(SYSDATE), 1, SYSTIMESTAMP)
+  INTO pre_registration_request (user_id, unit_code, register_date, shift, request_type, system_id, database_id, object_name, access_rights, signed_at, status, created_at, version)
+    VALUES (2, 'TTCNTT', TRUNC(SYSDATE), 2, 'Chỉnh sửa', 1, 1, 'All Schema', 'SELECT,INSERT,UPDATE,DELETE', SYSTIMESTAMP, 'USED', SYSTIMESTAMP, 0)
+  INTO pre_registration_request (user_id, unit_code, register_date, shift, request_type, system_id, database_id, object_name, access_rights, signed_at, status, created_at, version)
+    VALUES (3, 'TTCNTT', TRUNC(SYSDATE), 2, 'Truy vấn', 1, 1, 'All Schema', 'SELECT', SYSTIMESTAMP, 'USED', SYSTIMESTAMP, 0)
+  INTO pre_registration_request (user_id, unit_code, register_date, shift, request_type, system_id, database_id, object_name, access_rights, signed_at, status, created_at, version)
+    VALUES (3, 'TTCNTT', TRUNC(SYSDATE), 2, 'Chỉnh sửa', 2, 2, 'All Schema', 'SELECT,INSERT,UPDATE,DELETE', SYSTIMESTAMP, 'USED', SYSTIMESTAMP, 0)
 SELECT 1 FROM dual;
 
 COMMIT;

@@ -21,12 +21,32 @@
               th:action="${entity != null} ? @{'/requests/' + ${entity.id} + '/draft'} : @{/requests/draft}"
               method="post">
             <input type="hidden" th:field="*{requestType}"/>
+            <!-- Hidden field for unit code (used by JS to load pre-registrations) -->
+            <input type="hidden" id="unitCode" th:value="${currentUnitId}"/>
+
+            <!-- 01-YCTC specific: Loai yeu cau selector + Ngay lap -->
+            <div th:if="${requestType.name() == 'YCTC_01'}" style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:14px">
+                <div class="form-row" style="flex:1 1 220px">
+                    <label>Loại yêu cầu</label>
+                    <select th:field="*{requestSubType}" id="requestTypeSelect">
+                        <option value="">-- Chọn loại --</option>
+                        <option value="Truy vấn">Truy vấn</option>
+                        <option value="Chỉnh sửa">Chỉnh sửa</option>
+                    </select>
+                </div>
+                <div class="form-row" style="flex:1 1 160px">
+                    <label>Ngày lập</label>
+                    <input type="date" id="creationDate" name="requestDate"
+                           th:min="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"
+                           onkeydown="return false;"/>
+                </div>
+            </div>
 
             <h3>Thong tin chung</h3>
             <div style="display:flex; gap:14px; flex-wrap:wrap">
                 <div class="form-row" style="flex:1 1 120px">
                     <label>Ca</label>
-                    <select th:field="*{shiftNo}">
+                    <select th:field="*{shiftNo}" th:id="${requestType.name() == 'YCTC_01'} ? 'shiftSelect' : 'shiftNo'">
                         <option value="">--</option>
                         <option th:each="i : ${ {1,2,3} }" th:value="${i}" th:text="${i}"></option>
                     </select>
@@ -38,14 +58,15 @@
                         <option th:each="i : ${ {1,2,3,4,5} }" th:value="${i}" th:text="${i}"></option>
                     </select>
                 </div>
-                <div class="form-row" style="flex:1 1 220px">
+                <!-- He thong + CSDL: chi hien cho cac mau KHONG phai 01-YCTC (01 chon rieng tung dong) -->
+                <div class="form-row" style="flex:1 1 220px" th:unless="${requestType.name() == 'YCTC_01'}">
                     <label>He thong thong tin</label>
                     <select th:field="*{systemId}">
                         <option value="">--</option>
                         <option th:each="s : ${systems}" th:value="${s.id}" th:text="${s.name}"></option>
                     </select>
                 </div>
-                <div class="form-row" style="flex:1 1 220px">
+                <div class="form-row" style="flex:1 1 220px" th:unless="${requestType.name() == 'YCTC_01'}">
                     <label>CSDL</label>
                     <select th:field="*{databaseId}">
                         <option value="">--</option>
@@ -54,7 +75,13 @@
                 </div>
             </div>
 
-            <div style="display:flex; gap:14px; flex-wrap:wrap">
+            <!-- 01-YCTC: Thoi gian truy cap / truy xuat (read-only, derived from Ca) -->
+            <div th:if="${requestType.name() == 'YCTC_01'}" class="form-row" style="margin-top:8px">
+                <label>Thời gian truy cập/truy xuất</label>
+                <span id="shiftTimeDisplay" style="font-weight:bold; font-size:14px">Chọn Ca để hiển thị thời gian</span>
+            </div>
+
+            <div style="display:flex; gap:14px; flex-wrap:wrap" th:unless="${requestType.name() == 'YCTC_01'}">
                 <div class="form-row" style="flex:1 1 220px">
                     <label>Thoi gian bat dau</label>
                     <input type="datetime-local" th:field="*{startTime}"/>
@@ -75,9 +102,89 @@
                 <textarea th:field="*{reason}" rows="3"></textarea>
             </div>
 
-            <!-- Chi tiet cho 01, 04A, 05A, 05B -->
-            <div th:if="${requestType.name() == 'YCTC_01' or requestType.name() == 'YCTK_04A'
-                          or requestType.name() == 'YCKC_05A' or requestType.name() == 'HTKC_05B'}">
+            <!-- Chi tiet cho 01-YCTC -->
+            <div th:if="${requestType.name() == 'YCTC_01'}">
+                <h3>Danh sách chi tiết</h3>
+                <table id="detailTable">
+                    <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Hệ thống</th>
+                        <th>CSDL</th>
+                        <th>Tên đối tượng</th>
+                        <th>Quyền truy cập</th>
+                        <th>Họ và tên</th>
+                        <th>Trạng thái ký</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="d,stat : *{details}" th:attr="data-detail-id=${d.id != null ? d.id : stat.index}">
+                        <td th:text="${stat.count}"></td>
+                        <td>
+                            <select th:field="*{details[__${stat.index}__].systemId}">
+                                <option value="">--</option>
+                                <option th:each="s : ${systems}" th:value="${s.id}" th:text="${s.name}"></option>
+                            </select>
+                        </td>
+                        <td>
+                            <select th:field="*{details[__${stat.index}__].databaseId}">
+                                <option value="">--</option>
+                                <option th:each="db : ${databases}" th:value="${db.id}" th:text="${db.name}"></option>
+                            </select>
+                        </td>
+                        <td><input type="text" th:field="*{details[__${stat.index}__].objectName}" placeholder="All Schema"/></td>
+                        <td>
+                            <div class="access-rights-group" style="display:flex; gap:6px; flex-wrap:wrap; font-size:12px">
+                                <label style="font-weight:normal"><input type="checkbox" class="access-right-checkbox" value="SELECT"
+                                    th:checked="${d.accessRights != null and #strings.contains(d.accessRights, 'SELECT')}"/> S</label>
+                                <label style="font-weight:normal"><input type="checkbox" class="access-right-checkbox" value="INSERT"
+                                    th:checked="${d.accessRights != null and #strings.contains(d.accessRights, 'INSERT')}"/> I</label>
+                                <label style="font-weight:normal"><input type="checkbox" class="access-right-checkbox" value="UPDATE"
+                                    th:checked="${d.accessRights != null and #strings.contains(d.accessRights, 'UPDATE')}"/> U</label>
+                                <label style="font-weight:normal"><input type="checkbox" class="access-right-checkbox" value="DELETE"
+                                    th:checked="${d.accessRights != null and #strings.contains(d.accessRights, 'DELETE')}"/> D</label>
+                            </div>
+                            <input type="hidden" th:field="*{details[__${stat.index}__].accessRights}" class="access-rights-hidden"/>
+                        </td>
+                        <td>
+                            <select th:field="*{details[__${stat.index}__].targetUserId}">
+                                <option value="">--</option>
+                                <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName}"></option>
+                            </select>
+                        </td>
+                        <td class="detail-status">
+                            <!-- Hidden field for pre-registration tracking -->
+                            <input type="hidden" th:field="*{details[__${stat.index}__].preRegistrationId}"/>
+                            <!-- Da ky: hien badge xanh -->
+                            <span class="badge badge-green"
+                                  th:if="${entity != null and d.id != null and signedDetailIds.contains(d.id)}">Đã ký</span>
+                            <!-- Chua ky, row da luu, va user hien tai DUNG LA nguoi trong dong nay: hien form ky -->
+                            <div th:if="${entity != null and d.id != null and !signedDetailIds.contains(d.id) and d.targetUserId != null and d.targetUserId.equals(currentUserId)}">
+                                <div style="display:inline; white-space:nowrap">
+                                    <input type="text" th:id="'otp-detail-' + ${d.id}" placeholder="OTP" style="width:80px"/>
+                                    <button type="button" class="btn btn-sm btn-success"
+                                            th:attr="data-request-id=${entity.id}, data-detail-id=${d.id}"
+                                            onclick="signDetail(this)">Ký</button>
+                                </div>
+                            </div>
+                            <!-- Chua ky, row da luu, nhung KHONG phai user hien tai -->
+                            <span class="text-muted"
+                                  th:if="${entity != null and d.id != null and !signedDetailIds.contains(d.id) and (d.targetUserId == null or !d.targetUserId.equals(currentUserId))}">Chưa ký</span>
+                            <!-- Row moi chua luu -->
+                            <span th:if="${d.id == null}" class="text-muted">—</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div style="margin-top:8px; display:flex; gap:8px">
+                    <button type="button" class="btn btn-sm" onclick="addDetailRow()">+ Thêm dòng</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="removeLastEmptyRow()">- Xóa dòng trống cuối</button>
+                </div>
+                <p class="text-muted" style="margin-top:4px">Dòng để trống sẽ được bỏ qua khi lưu.</p>
+            </div>
+
+            <!-- Chi tiet cho 04A -->
+            <div th:if="${requestType.name() == 'YCTK_04A'}">
                 <h3>Danh sach chi tiet</h3>
                 <table>
                     <thead>
@@ -85,8 +192,8 @@
                         <th>CSDL</th>
                         <th>Owner</th>
                         <th>Doi tuong/Bang</th>
-                        <th th:if="${requestType.name() == 'YCTK_04A'}">Chu tai khoan</th>
-                        <th th:if="${requestType.name() == 'YCTK_04A'}">Loai/Hinh thuc</th>
+                        <th>Chu tai khoan</th>
+                        <th>Loai/Hinh thuc</th>
                         <th>Nguoi su dung</th>
                         <th>Quyen</th>
                         <th>QueryAll</th>
@@ -103,10 +210,10 @@
                         </td>
                         <td><input type="text" th:field="*{details[__${stat.index}__].objectOwner}"/></td>
                         <td><input type="text" th:field="*{details[__${stat.index}__].objectName}"/></td>
-                        <td th:if="${requestType.name() == 'YCTK_04A'}">
+                        <td>
                             <input type="text" th:field="*{details[__${stat.index}__].accountOwnerName}"/>
                         </td>
-                        <td th:if="${requestType.name() == 'YCTK_04A'}">
+                        <td>
                             <select th:field="*{details[__${stat.index}__].accountType}">
                                 <option value="">--</option>
                                 <option value="ACCESS">Truy cap</option>
@@ -136,6 +243,49 @@
                 <p class="text-muted">Dong de trong se duoc bo qua khi luu.</p>
             </div>
 
+            <!-- Chi tiet cho 05A, 05B -->
+            <div th:if="${requestType.name() == 'YCKC_05A' or requestType.name() == 'HTKC_05B'}">
+                <h3>Danh sach chi tiet</h3>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>CSDL</th>
+                        <th>Owner</th>
+                        <th>Doi tuong/Bang</th>
+                        <th>Nguoi su dung</th>
+                        <th>Quyen</th>
+                        <th>QueryAll</th>
+                        <th>Muc dich</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="d,stat : *{details}">
+                        <td>
+                            <select th:field="*{details[__${stat.index}__].databaseId}">
+                                <option value="">--</option>
+                                <option th:each="db : ${databases}" th:value="${db.id}" th:text="${db.name}"></option>
+                            </select>
+                        </td>
+                        <td><input type="text" th:field="*{details[__${stat.index}__].objectOwner}"/></td>
+                        <td><input type="text" th:field="*{details[__${stat.index}__].objectName}"/></td>
+                        <td>
+                            <select th:field="*{details[__${stat.index}__].targetUserId}">
+                                <option value="">--</option>
+                                <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName}"></option>
+                            </select>
+                        </td>
+                        <td><input type="text" th:field="*{details[__${stat.index}__].accessRights}"
+                                   placeholder="SELECT,INSERT"/></td>
+                        <td style="text-align:center">
+                            <input type="checkbox" th:field="*{details[__${stat.index}__].queryAll}"/>
+                        </td>
+                        <td><input type="text" th:field="*{details[__${stat.index}__].purpose}"/></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <p class="text-muted">Dong de trong se duoc bo qua khi luu.</p>
+            </div>
+
             <div th:if="${requestType.name() == 'YCCS_02' or requestType.name() == 'YCCT_03'}"
                  class="alert alert-info">
                 Mau <span th:text="${requestType.formCode}"></span> can tai file SQL/script va ma kiem tra
@@ -143,23 +293,39 @@
             </div>
 
             <div class="grid-actions">
-                <button type="submit" class="btn">Luu nhap</button>
-                <a class="btn btn-secondary" th:href="@{/requests}">Danh sach cua toi</a>
+                <!-- Luu nhap chi hien khi phieu chua chuyen sang PENDING_SIGN -->
+                <button type="submit" class="btn" name="action" value="draft"
+                        th:if="${entity == null or entity.status.name() == 'DRAFT' or entity.status.name() == 'RETURNED'}">Lưu nháp</button>
+                <!-- Luu phieu cho ky chung (Branch A) — chi cho 01-YCTC va 04A-YCTK, chi khi status DRAFT -->
+                <button type="submit" class="btn btn-success" name="action" value="save-for-sign"
+                        th:if="${(requestType.name() == 'YCTC_01' or requestType.name() == 'YCTK_04A') and (entity == null or entity.status.name() == 'DRAFT')}"
+                        onclick="return confirm('Lưu phiếu và chờ ký chung? Đồng nghiệp cùng đơn vị sẽ thấy phiếu này.')">
+                    Lưu phiếu (chờ ký chung)
+                </button>
+                <!-- Luu thay doi cho co-worker khi phieu dang PENDING_SIGN -->
+                <button type="submit" class="btn" name="action" value="draft"
+                        th:if="${entity != null and entity.status.name() == 'PENDING_SIGN'}">Lưu thay đổi</button>
+                <a class="btn btn-secondary" th:href="@{/requests}">Danh sách của tôi</a>
+                <!-- Nut lam moi - reload trang -->
+                <a class="btn btn-secondary" th:if="${entity != null}" th:href="@{'/requests/' + ${entity.id} + '/edit'}" onclick="sessionStorage.clear();">Làm mới</a>
+                <a class="btn btn-secondary" th:if="${entity == null}" th:href="@{'/requests/new/' + ${requestType.name()}}" onclick="sessionStorage.clear();">Làm mới</a>
             </div>
         </form>
     </div>
 
-    <!-- Ky va gui chi hien khi da co phieu (da luu nhap) -->
-    <div class="card" th:if="${entity != null}">
-        <h3>Ky xac nhan va gui</h3>
+    <!-- Ky va gui chi hien khi da co phieu (da luu nhap) VA chi nguoi lap phieu moi thay -->
+    <div class="card" th:if="${entity != null and entity.requesterUserId == currentUserId}">
+        <h3>Ký xác nhận và gửi</h3>
+        <p class="text-muted">Chỉ người lập phiếu mới ký tại mục này. Nếu bạn có tên trong dòng chi tiết, ký ở đây sẽ đồng thời xác nhận dòng chi tiết của bạn.</p>
+
         <form th:action="@{'/requests/' + ${entity.id} + '/sign'}" method="post"
               style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
             <div class="form-row" style="flex:0 0 200px; margin:0">
-                <label>Ma OTP/SoftOTP</label>
+                <label>Mã OTP/SoftOTP</label>
                 <input type="text" name="otp" required/>
             </div>
             <input type="hidden" name="signingScope" value="GENERAL"/>
-            <button type="submit" class="btn btn-success">Ky xac nhan</button>
+            <button type="submit" class="btn btn-success">Ký xác nhận</button>
         </form>
 
         <hr/>
@@ -171,17 +337,273 @@
                     <option th:each="e : ${emergencyOptions}" th:value="${e.id}" th:text="${e.requestCode}"></option>
                 </select>
             </div>
-            <button type="submit" class="btn">Gui phe duyet / chuyen xu ly</button>
+            <button type="submit" class="btn">Gửi phê duyệt / chuyển xử lý</button>
         </form>
 
         <hr/>
         <form th:action="@{'/requests/' + ${entity.id} + '/cancel'}" method="post"
-              onsubmit="return confirm('Huy yeu cau nay?');">
-            <button type="submit" class="btn btn-danger">Huy yeu cau</button>
+              onsubmit="return confirm('Hủy yêu cầu này?');">
+            <button type="submit" class="btn btn-danger">Hủy yêu cầu</button>
         </form>
     </div>
 
 </div>
 <footer th:replace="fragments/layout :: footer"></footer>
+
+<!-- 01-YCTC: auto-fill creation date and shift time range -->
+<script th:if="${requestType.name() == 'YCTC_01'}" th:inline="javascript">
+(function() {
+    'use strict';
+
+    // Auto-fill "Ngày lập" with today's date (only if empty)
+    var creationDateEl = document.getElementById('creationDate');
+    if (creationDateEl && !creationDateEl.value) {
+        var now = new Date();
+        var yyyy = now.getFullYear();
+        var mm = String(now.getMonth() + 1).padStart(2, '0');
+        var dd = String(now.getDate()).padStart(2, '0');
+        creationDateEl.value = yyyy + '-' + mm + '-' + dd;
+    }
+
+    // Shift time mapping — uses selected date (not just today)
+    function getSelectedDate() {
+        if (creationDateEl && creationDateEl.value) {
+            return creationDateEl.value; // yyyy-MM-dd
+        }
+        var now = new Date();
+        return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    }
+
+    function formatDateVN(dateStr) {
+        // Convert yyyy-MM-dd to dd/MM/yyyy
+        var parts = dateStr.split('-');
+        return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+
+    function getShiftTimeLabel(shift) {
+        var dateStr = formatDateVN(getSelectedDate());
+        switch (shift) {
+            case '1': return 'Từ ' + dateStr + ' - 00:00 đến ' + dateStr + ' - 08:00';
+            case '2': return 'Từ ' + dateStr + ' - 08:00 đến ' + dateStr + ' - 20:00';
+            case '3': return 'Từ ' + dateStr + ' - 20:00 đến ' + dateStr + ' - 24:00';
+            default: return '';
+        }
+    }
+
+    var shiftSelect = document.getElementById('shiftSelect');
+    var shiftTimeDisplay = document.getElementById('shiftTimeDisplay');
+
+    // Disable past shifts when selected date is today
+    function updateShiftOptions() {
+        if (!shiftSelect || !creationDateEl) return;
+        var selectedDate = creationDateEl.value;
+        var now = new Date();
+        var todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+
+        var currentHour = now.getHours();
+        var options = shiftSelect.querySelectorAll('option');
+        options.forEach(function(opt) {
+            if (!opt.value) return; // skip placeholder
+            var shiftNo = parseInt(opt.value);
+            if (selectedDate === todayStr) {
+                // Ca 1 ends at 8h, Ca 2 ends at 20h, Ca 3 ends at 24h
+                var endHour = shiftNo === 1 ? 8 : (shiftNo === 2 ? 20 : 24);
+                opt.disabled = (currentHour >= endHour);
+            } else {
+                // Future date: all shifts available
+                opt.disabled = false;
+            }
+        });
+
+        // If currently selected shift is now disabled, clear it
+        if (shiftSelect.selectedOptions[0] && shiftSelect.selectedOptions[0].disabled) {
+            shiftSelect.value = '';
+        }
+    }
+
+    function updateShiftTime() {
+        if (!shiftSelect || !shiftTimeDisplay) return;
+        var shift = shiftSelect.value;
+        if (shift && getShiftTimeLabel(shift)) {
+            shiftTimeDisplay.textContent = getShiftTimeLabel(shift);
+        } else {
+            shiftTimeDisplay.textContent = 'Chọn Ca để hiển thị thời gian';
+        }
+    }
+
+    if (shiftSelect) {
+        shiftSelect.addEventListener('change', updateShiftTime);
+        updateShiftTime();
+        updateShiftOptions();
+    }
+
+    if (creationDateEl) {
+        creationDateEl.addEventListener('change', function() {
+            updateShiftOptions();
+            updateShiftTime();
+        });
+    }
+})();
+</script>
+
+<!-- Include form-01-yctc.js for request type toggle logic -->
+<script th:if="${requestType.name() == 'YCTC_01'}" th:src="@{/js/form-01-yctc.js}"></script>
+
+<!-- Combine access rights checkboxes into hidden fields before submit (01-YCTC) -->
+<script th:if="${requestType.name() == 'YCTC_01'}">
+(function() {
+    'use strict';
+    var form = document.querySelector('form');
+    if (!form) return;
+
+    function syncAccessRights() {
+        // Only sync editable rows (non-pre-registered). Pre-registered rows
+        // already have their access rights set in hidden inputs by JS.
+        document.querySelectorAll('#detailTable tbody tr:not([data-pre-registered="true"])').forEach(function(row) {
+            var checkboxes = row.querySelectorAll('.access-right-checkbox:checked');
+            var hiddenInput = row.querySelector('.access-rights-hidden');
+            if (hiddenInput) {
+                var values = [];
+                checkboxes.forEach(function(cb) { values.push(cb.value); });
+                hiddenInput.value = values.join(',');
+            }
+        });
+    }
+
+    // Sync on each checkbox change so auto-save picks up current values
+    // Use event delegation so dynamically added checkboxes are also handled
+    document.getElementById('detailTable').addEventListener('change', function(e) {
+        if (e.target.classList.contains('access-right-checkbox') &&
+            !e.target.closest('tr[data-pre-registered="true"]')) {
+            syncAccessRights();
+        }
+    });
+
+    // Sync before submit
+    form.addEventListener('submit', syncAccessRights);
+})();
+</script>
+
+<!-- Sign detail row via AJAX (avoids nested form issue) -->
+<script th:if="${requestType.name() == 'YCTC_01' or requestType.name() == 'YCTK_04A'}">
+function signDetail(btn) {
+    var requestId = btn.getAttribute('data-request-id');
+    var detailId = btn.getAttribute('data-detail-id');
+    var otpInput = document.getElementById('otp-detail-' + detailId);
+    var otp = otpInput ? otpInput.value : '';
+
+    if (!otp.trim()) {
+        alert('Vui lòng nhập mã OTP.');
+        return;
+    }
+
+    var formData = new URLSearchParams();
+    formData.append('otp', otp);
+    formData.append('signingScope', 'DETAIL');
+    formData.append('detailId', detailId);
+
+    // Get CSRF token
+    var csrfMeta = document.querySelector('meta[name="_csrf"]');
+    var csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+    var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    if (csrfMeta && csrfHeaderMeta) {
+        headers[csrfHeaderMeta.getAttribute('content')] = csrfMeta.getAttribute('content');
+    }
+    // Also try hidden input (Thymeleaf default)
+    var csrfInput = document.querySelector('input[name="_csrf"]');
+    if (csrfInput) {
+        formData.append('_csrf', csrfInput.value);
+    }
+
+    fetch('/requests/' + requestId + '/sign', {
+        method: 'POST',
+        headers: headers,
+        body: formData.toString(),
+        credentials: 'same-origin'
+    }).then(function(response) {
+        if (response.ok || response.redirected) {
+            // Reload page to show updated signing status
+            window.location.reload();
+        } else {
+            response.text().then(function(text) {
+                alert('Ký thất bại: ' + (text || 'Lỗi không xác định'));
+            });
+        }
+    }).catch(function(err) {
+        alert('Lỗi kết nối: ' + err.message);
+    });
+}
+</script>
+
+<!-- Add/remove detail rows for 01-YCTC -->
+<script th:if="${requestType.name() == 'YCTC_01'}">
+function addDetailRow() {
+    var tbody = document.querySelector('#detailTable tbody');
+    if (!tbody) return;
+    var allRows = tbody.querySelectorAll('tr');
+    var newIdx = allRows.length;
+
+    var systemsOptions = document.querySelector('#detailTable select[name*="systemId"]');
+    var dbOptions = document.querySelector('#detailTable select[name*="databaseId"]');
+    var userOptions = document.querySelector('#detailTable select[name*="targetUserId"]');
+
+    // Clone options from existing selects
+    function cloneOptions(sourceSelect) {
+        if (!sourceSelect) return '<option value="">--</option>';
+        return sourceSelect.innerHTML;
+    }
+
+    var row = document.createElement('tr');
+    row.innerHTML = ''
+        + '<td>' + (newIdx + 1) + '</td>'
+        + '<td><select name="details[' + newIdx + '].systemId">' + cloneOptions(systemsOptions) + '</select></td>'
+        + '<td><select name="details[' + newIdx + '].databaseId">' + cloneOptions(dbOptions) + '</select></td>'
+        + '<td><input type="text" name="details[' + newIdx + '].objectName" placeholder="All Schema"/></td>'
+        + '<td>'
+        + '  <div class="access-rights-group" style="display:flex;gap:6px;flex-wrap:wrap;font-size:12px">'
+        + '    <label style="font-weight:normal"><input type="checkbox" class="access-right-checkbox" value="SELECT"/> S</label>'
+        + '    <label style="font-weight:normal"><input type="checkbox" class="access-right-checkbox" value="INSERT"/> I</label>'
+        + '    <label style="font-weight:normal"><input type="checkbox" class="access-right-checkbox" value="UPDATE"/> U</label>'
+        + '    <label style="font-weight:normal"><input type="checkbox" class="access-right-checkbox" value="DELETE"/> D</label>'
+        + '  </div>'
+        + '  <input type="hidden" name="details[' + newIdx + '].accessRights" class="access-rights-hidden"/>'
+        + '</td>'
+        + '<td><select name="details[' + newIdx + '].targetUserId">' + cloneOptions(userOptions) + '</select></td>'
+        + '<td class="detail-status"><span class="text-muted">\u2014</span></td>';
+    tbody.appendChild(row);
+
+    // Re-index if form-01-yctc.js reindexDetailRows is available
+    if (window.Form01YCTC && window.Form01YCTC.reindexDetailRows) {
+        window.Form01YCTC.reindexDetailRows();
+    }
+}
+
+function removeLastEmptyRow() {
+    var tbody = document.querySelector('#detailTable tbody');
+    if (!tbody) return;
+    var rows = tbody.querySelectorAll('tr:not([data-pre-registered="true"])');
+    if (rows.length === 0) return;
+
+    // Remove the LAST editable row that has no data filled
+    for (var i = rows.length - 1; i >= 0; i--) {
+        var row = rows[i];
+        var selects = row.querySelectorAll('select');
+        var hasData = false;
+        selects.forEach(function(s) { if (s.value) hasData = true; });
+        var inputs = row.querySelectorAll('input[type="text"]');
+        inputs.forEach(function(inp) { if (inp.value.trim()) hasData = true; });
+
+        if (!hasData) {
+            row.parentNode.removeChild(row);
+            // Re-index
+            if (window.Form01YCTC && window.Form01YCTC.reindexDetailRows) {
+                window.Form01YCTC.reindexDetailRows();
+            }
+            return;
+        }
+    }
+    alert('Không có dòng trống nào để xóa.');
+}
+</script>
 </body>
 </html>

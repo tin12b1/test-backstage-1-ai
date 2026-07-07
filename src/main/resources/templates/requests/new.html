@@ -11,6 +11,10 @@
                 <div class="num" th:text="${t.formCode}">01</div>
                 <div class="label" th:text="${t.displayName}">Mo ta</div>
                 <p><a class="btn btn-sm" th:href="@{'/requests/new/' + ${t.name()}}">Lap phieu</a></p>
+                <!-- Show pre-registration link only for 01-YCTC -->
+                <p th:if="${t.name() == 'YCTC_01'}">
+                    <a class="btn btn-sm btn-secondary" th:href="@{/pre-registrations}">Đăng ký trước YC chi tiết</a>
+                </p>
             </div>
         </div>
     </div>

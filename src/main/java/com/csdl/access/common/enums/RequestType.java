@@ -20,6 +20,9 @@ public enum RequestType {
     /** 04A - Cap moi / thay doi thuoc tinh tai khoan. */
     YCTK_04A("04A-YCTK", "Cap moi/thay doi thuoc tinh tai khoan", true),
 
+    /** 04B - Bien ban ban giao tai khoan. */
+    BGTK_04B("04B-BGTK", "Bien ban ban giao tai khoan", true),
+
     /** 05A - Truy cap khan cap. */
     YCKC_05A("05A-YCKC", "Truy cap khan cap", false),
 

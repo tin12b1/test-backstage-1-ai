@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Fragment: signing-panel
+  OTP input + nut ky xac nhan + hien thi chu ky
+  Su dung: th:replace="requests/fragments/signing-panel :: signingPanel(requestId=${entity.id}, signatureUrl=${signatureUrl})"
+-->
+<div th:fragment="signingPanel(requestId, signatureUrl)">
+    <div class="card" style="margin-top:16px">
+        <h3>Ky xac nhan</h3>
+
+        <!-- Hien thi chu ky neu da ky -->
+        <div th:if="${signatureUrl != null}" style="margin-bottom:12px">
+            <p class="text-success">Da ky xac nhan</p>
+            <img th:src="${signatureUrl}" alt="Chu ky" style="max-width:200px; border:1px solid #ccc; padding:4px"/>
+        </div>
+
+        <!-- Form nhap OTP neu chua ky -->
+        <form th:if="${signatureUrl == null}"
+              th:action="@{'/requests/' + ${requestId} + '/sign'}" method="post"
+              style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
+
+            <input type="hidden" name="signingScope" id="signingScope" value="GENERAL"/>
+            <input type="hidden" name="detailId" id="detailId" value=""/>
+
+            <div class="form-row" style="flex:0 0 200px; margin:0">
+                <label>Ma OTP (6 so)</label>
+                <input type="text" name="otp" required
+                       maxlength="6" pattern="[0-9]{6}"
+                       placeholder="Nhap 6 so OTP"
+                       class="form-control"/>
+            </div>
+
+            <button type="submit" class="btn btn-success">Ky xac nhan</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

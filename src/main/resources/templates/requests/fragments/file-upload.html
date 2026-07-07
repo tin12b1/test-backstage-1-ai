@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Fragment: file-upload
+  Upload file SQL + nhap checksum (dung cho mau 02-YCCS, 03-YCCT)
+  Su dung: th:replace="requests/fragments/file-upload :: fileUpload(requestId=${entity.id})"
+-->
+<div th:fragment="fileUpload(requestId)">
+    <div class="card" style="margin-top:16px">
+        <h3>Tai file SQL Script</h3>
+
+        <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end">
+            <!-- File input -->
+            <div class="form-row" style="flex:1 1 280px">
+                <label>Chon file (*.sql, toi da 10MB)</label>
+                <input type="file" id="scriptFile" accept=".sql" class="form-control"/>
+                <small class="text-muted">Ten file phai theo dinh dang: YYYYMMDD_BS_XXX.sql</small>
+            </div>
+
+            <!-- Checksum type -->
+            <div class="form-row" style="flex:0 0 140px">
+                <label>Loai checksum</label>
+                <select id="checksumType" class="form-select">
+                    <option value="MD5">MD5</option>
+                    <option value="SHA-256">SHA-256</option>
+                </select>
+            </div>
+
+            <!-- Checksum value -->
+            <div class="form-row" style="flex:1 1 320px">
+                <label>Gia tri checksum</label>
+                <input type="text" id="checksumValue" class="form-control"
+                       placeholder="Nhap ma hash (MD5: 32 ky tu, SHA-256: 64 ky tu)"/>
+            </div>
+
+            <!-- Upload button -->
+            <div class="form-row" style="flex:0 0 auto">
+                <button type="button" id="btnUploadScript" class="btn"
+                        onclick="uploadScript()">
+                    Upload
+                </button>
+            </div>
+        </div>
+
+        <!-- Status message -->
+        <div id="uploadStatus" style="margin-top:8px; display:none">
+            <span id="uploadStatusText"></span>
+        </div>
+
+        <!-- Hien thi file da upload -->
+        <div id="uploadedFileInfo" th:if="${uploadedFileName != null}" style="margin-top:8px">
+            <span class="text-success">
+                File da tai: <b th:text="${uploadedFileName}">file.sql</b>
+                — Checksum hop le
+            </span>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        function uploadScript() {
+            var requestId = /*[[${requestId}]]*/ '';
+            var fileInput = document.getElementById('scriptFile');
+            var checksumType = document.getElementById('checksumType').value;
+            var checksumValue = document.getElementById('checksumValue').value.trim();
+            var statusDiv = document.getElementById('uploadStatus');
+            var statusText = document.getElementById('uploadStatusText');
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showUploadStatus('Vui long chon file SQL.', 'text-danger');
+                return;
+            }
+            if (!checksumValue) {
+                showUploadStatus('Vui long nhap gia tri checksum.', 'text-danger');
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('checksumType', checksumType);
+            formData.append('checksumValue', checksumValue);
+
+            showUploadStatus('Dang tai len...', 'text-info');
+
+            fetch('/requests/' + requestId + '/upload-script', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    showUploadStatus('Upload thanh cong. Checksum hop le.', 'text-success');
+                } else {
+                    showUploadStatus(data.message || 'Upload that bai.', 'text-danger');
+                }
+            })
+            .catch(function(err) {
+                showUploadStatus('Loi ket noi. Vui long thu lai.', 'text-danger');
+            });
+        }
+
+        function showUploadStatus(message, cssClass) {
+            var statusDiv = document.getElementById('uploadStatus');
+            var statusText = document.getElementById('uploadStatusText');
+            statusDiv.style.display = 'block';
+            statusText.className = cssClass;
+            statusText.textContent = message;
+        }
+    </script>
+</div>
+
+</body>
+</html>

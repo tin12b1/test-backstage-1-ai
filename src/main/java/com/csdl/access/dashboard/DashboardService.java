@@ -2,6 +2,7 @@ package com.csdl.access.dashboard;
 
 import com.csdl.access.auth.UserSession;
 import com.csdl.access.common.enums.RequestStatus;
+import com.csdl.access.common.enums.RequestType;
 import com.csdl.access.common.enums.RoleCode;
 import com.csdl.access.common.lookup.LookupService;
 import com.csdl.access.common.lookup.RequestRow;
@@ -68,6 +69,14 @@ public class DashboardService {
         long approved = mine.stream().filter(r -> r.getApprovedAt() != null
                 && r.getStatus() != RequestStatus.COMPLETED).count();
 
+        // Count shared pending sign requests from same unit
+        List<RequestType> sharedTypes = List.of(RequestType.YCTC_01, RequestType.YCTK_04A);
+        long sharedPendingSign = requestRepository
+                .findByRequestTypeInAndStatusAndRequesterUnitIdAndRequesterUserIdNot(
+                        sharedTypes, RequestStatus.PENDING_SIGN, session.getUnitId(), session.getUserId())
+                .size();
+        view.setSharedPendingSignCount(sharedPendingSign);
+
         view.getCounters().put("Tong so yeu cau", (long) mine.size());
         view.getCounters().put("Cho phe duyet", pending);
         view.getCounters().put("Da phe duyet", approved);
@@ -76,6 +85,7 @@ public class DashboardService {
         view.getCounters().put("Bi chuyen tra", returned);
         view.getCounters().put("No phieu 05B-HTKC",
                 (long) debtService.outstandingEmergencyRequests(session.getUserId()).size());
+        view.getCounters().put("Phieu cho ky chung", sharedPendingSign);
 
         view.setPrimaryTitle("Yeu cau bi chuyen tra (can xu ly lai)");
         view.setPrimaryList(toRows(mine.stream()

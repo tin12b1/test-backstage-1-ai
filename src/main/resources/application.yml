@@ -2,11 +2,19 @@ spring:
   application:
     name: csdl-access
 
+  # [DEV-OVERRIDE] Original H2 config (MODE=LEGACY) - uncomment to restore
+  # datasource:
+  #   url: jdbc:h2:mem:csdl;DB_CLOSE_DELAY=-1;MODE=LEGACY
+  #   driver-class-name: org.h2.Driver
+  #   username: sa
+  #   password: ""
+
+  # [DEV-OVERRIDE] H2 in-memory with LEGACY mode (supports LIMIT pagination)
   datasource:
-    url: jdbc:h2:mem:csdl;DB_CLOSE_DELAY=-1;MODE=LEGACY
+    url: jdbc:h2:mem:csdldb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=LEGACY
     driver-class-name: org.h2.Driver
     username: sa
-    password: ""
+    password:
 
   h2:
     console:
@@ -14,8 +22,15 @@ spring:
       path: /h2-console
 
   jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: create
+      # Let Hibernate create tables from entities — avoids column name mismatches
+      ddl-auto: create-drop
+      naming:
+        # Use @Column(name=...) values as-is without additional transformation.
+        # All multi-word fields already have explicit @Column(name="snake_case")
+        # so this is safe and avoids naming strategy quirks (e.g. 'commentText' → 'comment').
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
     properties:
       hibernate:
         format_sql: true

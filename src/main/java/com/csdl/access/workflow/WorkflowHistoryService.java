@@ -30,7 +30,7 @@ public class WorkflowHistoryService {
         h.setActorUserId(actorUserId);
         h.setActorRoleCode(actorRoleCode);
         h.setAction(action);
-        h.setComment(comment);
+        h.setCommentText(comment);
         repository.save(h);
     }
 

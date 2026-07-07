@@ -6,6 +6,9 @@ package com.csdl.access.common.enums;
 public enum RequestStatus {
 
     DRAFT("Luu nhap"),
+    PENDING_SIGN("Cho ky xac nhan"),
+    PENDING_RECEIPT("Cho nguoi nhan ky ban giao"),
+    PENDING_APPROVAL("Cho phe duyet"),
     PENDING_CHECK("Cho bo phan kiem tra"),
     PENDING_DEPT_APPROVAL("Cho Truong phong/tuong duong"),
     PENDING_AUTHORITY_APPROVAL("Cho Nguoi co tham quyen"),
@@ -32,12 +35,12 @@ public enum RequestStatus {
 
     /** Trang thai con cho phep sua/huy (chua gui phe duyet). */
     public boolean isEditable() {
-        return this == DRAFT || this == RETURNED || this == SEND_FAILED;
+        return this == DRAFT || this == PENDING_SIGN || this == RETURNED || this == SEND_FAILED;
     }
 
     /** Chi cho huy khi chua duoc phe duyet. */
     public boolean isCancellable() {
-        return this == DRAFT || this == RETURNED || this == SEND_FAILED
+        return this == DRAFT || this == PENDING_SIGN || this == RETURNED || this == SEND_FAILED
                 || this == PENDING_CHECK || this == PENDING_DEPT_APPROVAL
                 || this == PENDING_AUTHORITY_APPROVAL || this == PENDING_OWNER_UNIT;
     }

@@ -22,6 +22,16 @@
         </p>
     </div>
 
+    <!-- Phieu cho ky chung - hien thi khi co phieu can ky -->
+    <div class="card" th:if="${view.sharedPendingSignCount > 0}" style="border-left: 4px solid #e6a817;">
+        <h3>
+            Phieu cho ky chung (cung don vi)
+            <span class="badge badge-gold" th:text="${view.sharedPendingSignCount}">0</span>
+        </h3>
+        <p class="text-muted">Co phieu 01-YCTC / 04A-YCTK dang cho ban ky xac nhan tu dong nghiep cung don vi.</p>
+        <a class="btn btn-gold" th:href="@{/requests}">Xem va ky xac nhan &rarr;</a>
+    </div>
+
     <div class="card" th:if="${view.primaryList != null and !view.primaryList.isEmpty()}">
         <h3 th:text="${view.primaryTitle}">Danh sach</h3>
         <table>

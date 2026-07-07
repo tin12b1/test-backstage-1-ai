@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Fragment: header-info
+  Thong tin chung: Don vi, Phong/bo phan, Nguoi lap, Ca, Ngay, Lan
+  Su dung: th:replace="requests/fragments/header-info :: headerInfo(form=${form})"
+-->
+<div th:fragment="headerInfo(form)">
+    <h3>Thong tin chung</h3>
+
+    <!-- Don vi, Phong/bo phan, Nguoi lap (read-only tu session) -->
+    <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px">
+        <div class="form-row" style="flex:1 1 220px">
+            <label>Don vi</label>
+            <input type="text" th:value="${currentUser.unitName}" readonly class="form-control-plaintext"/>
+        </div>
+        <div class="form-row" style="flex:1 1 220px">
+            <label>Phong/bo phan</label>
+            <input type="text" th:value="${currentUser.departmentName}" readonly class="form-control-plaintext"/>
+        </div>
+        <div class="form-row" style="flex:1 1 220px">
+            <label>Nguoi lap</label>
+            <input type="text" th:value="${currentUser.fullName}" readonly class="form-control-plaintext"/>
+        </div>
+    </div>
+
+    <!-- Ca, Ngay, Lan (editable) -->
+    <div style="display:flex; gap:14px; flex-wrap:wrap">
+        <div class="form-row" style="flex:0 0 120px">
+            <label>Ca</label>
+            <select th:field="${form.shiftNo}" class="form-select">
+                <option value="">--</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+            </select>
+        </div>
+        <div class="form-row" style="flex:0 0 180px">
+            <label>Ngay</label>
+            <input type="date" th:field="${form.requestDate}" class="form-control"/>
+        </div>
+        <div class="form-row" style="flex:0 0 120px">
+            <label>Lan</label>
+            <select th:field="${form.accessNo}" class="form-select">
+                <option value="">--</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

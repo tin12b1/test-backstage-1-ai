@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Đăng ký trước Yêu cầu chi tiết')"></head>
+<body>
+<nav th:replace="fragments/layout :: navbar"></nav>
+<div class="container">
+
+    <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <div class="card">
+        <h2 th:text="${entity != null} ? 'Sửa đăng ký trước' : 'Đăng ký trước Yêu cầu chi tiết'">Đăng ký trước Yêu cầu chi tiết</h2>
+
+        <form th:object="${form}"
+              th:action="${entity != null} ? @{'/pre-registrations/' + ${entity.id}} : @{/pre-registrations}"
+              method="post">
+
+            <div style="display:flex; gap:14px; flex-wrap:wrap">
+                <div class="form-row" style="flex:1 1 180px">
+                    <label>Ngày đăng ký</label>
+                    <input type="date" th:field="*{registerDate}" required
+                           th:min="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
+                </div>
+                <div class="form-row" style="flex:1 1 120px">
+                    <label>Ca</label>
+                    <select th:field="*{shift}" required>
+                        <option value="">--</option>
+                        <option th:each="i : ${ {1,2,3} }" th:value="${i}" th:text="'Ca ' + ${i}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:14px; flex-wrap:wrap">
+                <div class="form-row" style="flex:1 1 220px">
+                    <label>Hệ thống</label>
+                    <select th:field="*{systemId}" required>
+                        <option value="">--</option>
+                        <option th:each="s : ${systems}" th:value="${s.id}" th:text="${s.name}"></option>
+                    </select>
+                </div>
+                <div class="form-row" style="flex:1 1 220px">
+                    <label>CSDL</label>
+                    <select th:field="*{databaseId}" required>
+                        <option value="">--</option>
+                        <option th:each="db : ${databases}" th:value="${db.id}" th:text="${db.name}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label>Tên đối tượng</label>
+                <input type="text" th:field="*{objectName}" placeholder="All Schema"/>
+            </div>
+
+            <div class="form-row">
+                <label>Quyền truy cập</label>
+                <div style="display:flex; gap:16px; flex-wrap:wrap">
+                    <label style="font-weight:normal">
+                        <input type="checkbox" name="accessRightsList" value="SELECT"
+                               th:checked="${form.accessRights != null and #strings.contains(form.accessRights, 'SELECT')}"/> SELECT
+                    </label>
+                    <label style="font-weight:normal">
+                        <input type="checkbox" name="accessRightsList" value="INSERT"
+                               th:checked="${form.accessRights != null and #strings.contains(form.accessRights, 'INSERT')}"/> INSERT
+                    </label>
+                    <label style="font-weight:normal">
+                        <input type="checkbox" name="accessRightsList" value="UPDATE"
+                               th:checked="${form.accessRights != null and #strings.contains(form.accessRights, 'UPDATE')}"/> UPDATE
+                    </label>
+                    <label style="font-weight:normal">
+                        <input type="checkbox" name="accessRightsList" value="DELETE"
+                               th:checked="${form.accessRights != null and #strings.contains(form.accessRights, 'DELETE')}"/> DELETE
+                    </label>
+                </div>
+                <!-- Hidden field to hold the combined value for form binding -->
+                <input type="hidden" th:field="*{accessRights}" id="accessRightsHidden"/>
+            </div>
+
+            <hr/>
+
+            <div class="form-row" style="max-width:320px">
+                <label>Ký xác nhận (Google Authenticator)</label>
+                <input type="text" name="otp" required placeholder="Nhập mã OTP"/>
+            </div>
+
+            <div class="grid-actions">
+                <button type="submit" class="btn" onclick="combineAccessRights()">Ký và lưu lại</button>
+                <a class="btn btn-secondary" th:href="@{/pre-registrations}">Hủy</a>
+                <a class="btn btn-secondary" th:href="${entity != null} ? @{'/pre-registrations/' + ${entity.id} + '/edit'} : @{/pre-registrations/new}">Làm mới</a>
+            </div>
+        </form>
+    </div>
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+
+<script th:inline="javascript">
+function combineAccessRights() {
+    var checkboxes = document.querySelectorAll('input[name="accessRightsList"]:checked');
+    var values = [];
+    checkboxes.forEach(function(cb) { values.push(cb.value); });
+    document.getElementById('accessRightsHidden').value = values.join(',');
+}
+
+/**
+ * Kiem tra ngay + ca da qua chua (client-side).
+ * Ca 1 = 0-8h, Ca 2 = 8-20h, Ca 3 = 20-24h.
+ */
+function validateDateShiftNotPast() {
+    var dateInput = document.querySelector('input[type="date"]');
+    var shiftSelect = document.querySelector('select[name="shift"]');
+    if (!dateInput || !shiftSelect) return true;
+
+    var selectedDate = dateInput.value;
+    var selectedShift = parseInt(shiftSelect.value);
+    if (!selectedDate || !selectedShift) return true;
+
+    var now = new Date();
+    var today = now.toISOString().slice(0, 10); // yyyy-MM-dd
+
+    if (selectedDate > today) return true; // Ngay tuong lai, ok
+    if (selectedDate < today) {
+        alert('Không thể đăng ký cho ngày đã qua.');
+        return false;
+    }
+
+    // Ngay hom nay — kiem tra ca da ket thuc chua
+    var currentHour = now.getHours();
+    var shiftEndHour;
+    switch (selectedShift) {
+        case 1: shiftEndHour = 8; break;
+        case 2: shiftEndHour = 20; break;
+        case 3: shiftEndHour = 24; break;
+        default: shiftEndHour = 24;
+    }
+    if (currentHour >= shiftEndHour) {
+        alert('Ca ' + selectedShift + ' đã kết thúc. Vui lòng chọn ca khác hoặc ngày khác.');
+        return false;
+    }
+    return true;
+}
+
+// On form submit, combine checkboxes into hidden field and validate date/shift
+document.querySelector('form').addEventListener('submit', function(e) {
+    combineAccessRights();
+    if (!validateDateShiftNotPast()) {
+        e.preventDefault();
+        return false;
+    }
+});
+</script>
+</body>
+</html>

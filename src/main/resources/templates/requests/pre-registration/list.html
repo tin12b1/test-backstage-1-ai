@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Đăng ký trước Yêu cầu chi tiết')"></head>
+<body>
+<header th:replace="fragments/layout :: navbar"></header>
+<div class="container">
+
+    <div class="alert alert-success" th:if="${infoMessage}" th:text="${infoMessage}"></div>
+    <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px">
+            <h2 style="margin:0">Đăng ký trước Yêu cầu chi tiết</h2>
+            <a class="btn" th:href="@{/pre-registrations/new}">+ Đăng ký mới</a>
+        </div>
+
+        <table style="margin-top:16px">
+            <thead>
+            <tr>
+                <th>STT</th>
+                <th>Ngày</th>
+                <th>Ca</th>
+                <th>Hệ thống</th>
+                <th>CSDL</th>
+                <th>Đối tượng</th>
+                <th>Quyền</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+                <th>Ký số</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item, stat : ${page.content}">
+                <td th:text="${page.number * page.size + stat.count}"></td>
+                <td th:text="${item.registerDate}"></td>
+                <td th:text="'Ca ' + ${item.shift}"></td>
+                <td th:text="${systemMap[item.systemId] != null ? systemMap[item.systemId] : ''}"></td>
+                <td th:text="${databaseMap[item.databaseId] != null ? databaseMap[item.databaseId] : ''}"></td>
+                <td th:text="${item.objectName}"></td>
+                <td th:text="${item.accessRights}"></td>
+                <td>
+                    <span class="badge badge-green" th:if="${item.status == 'UNUSED'}">Chưa dùng</span>
+                    <span class="badge badge-yellow" th:if="${item.status == 'PENDING_APPROVAL'}">Chờ duyệt</span>
+                    <span class="badge badge-blue" th:if="${item.status == 'USED'}">Đã dùng</span>
+                    <span class="badge badge-gray" th:if="${item.status == 'EXPIRED'}">Hết hạn</span>
+                </td>
+                <td>
+                    <a class="btn btn-sm" th:if="${item.status == 'UNUSED'}"
+                       th:href="@{'/pre-registrations/' + ${item.id} + '/edit'}">Sửa</a>
+                    <button class="btn btn-sm btn-danger" th:if="${item.status == 'UNUSED'}"
+                            th:data-id="${item.id}"
+                            onclick="deletePreReg(this)">Xóa</button>
+                </td>
+                <td>
+                    <span class="badge badge-green" th:if="${item.signedAt != null}">Đã ký</span>
+                    <span class="text-muted" th:if="${item.signedAt == null}">Chưa ký</span>
+                </td>
+            </tr>
+            <tr th:if="${page.content.isEmpty()}">
+                <td colspan="10" class="text-muted">Chưa có đăng ký trước nào.</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="pagination" th:if="${page.totalPages > 1}" style="margin-top:16px; display:flex; gap:6px; flex-wrap:wrap">
+            <a class="btn btn-sm" th:if="${page.number > 0}"
+               th:href="@{/pre-registrations(page=${page.number - 1})}">&laquo; Trước</a>
+            <span th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}">
+                <a class="btn btn-sm" th:if="${i != page.number}"
+                   th:href="@{/pre-registrations(page=${i})}" th:text="${i + 1}"></a>
+                <span class="btn btn-sm" style="font-weight:bold" th:if="${i == page.number}" th:text="${i + 1}"></span>
+            </span>
+            <a class="btn btn-sm" th:if="${page.number < page.totalPages - 1}"
+               th:href="@{/pre-registrations(page=${page.number + 1})}">Sau &raquo;</a>
+        </div>
+    </div>
+</div>
+<footer th:replace="fragments/layout :: footer"></footer>
+
+<script th:inline="javascript">
+function deletePreReg(btn) {
+    if (!confirm('Bạn có chắc muốn xóa đăng ký trước này?')) return;
+    var id = btn.getAttribute('data-id');
+    fetch('/pre-registrations/' + id, { method: 'DELETE' })
+        .then(function(resp) {
+            if (resp.ok) {
+                location.reload();
+            } else {
+                alert('Không thể xóa. Vui lòng thử lại.');
+            }
+        });
+}
+</script>
+</body>
+</html>

@@ -16,6 +16,7 @@ public class DashboardView {
     private List<RequestRow> primaryList = new ArrayList<>();
     private String secondaryTitle;
     private List<RequestRow> secondaryList = new ArrayList<>();
+    private long sharedPendingSignCount;
 
     public String getGroupTitle() { return groupTitle; }
     public void setGroupTitle(String groupTitle) { this.groupTitle = groupTitle; }
@@ -28,4 +29,6 @@ public class DashboardView {
     public void setSecondaryTitle(String secondaryTitle) { this.secondaryTitle = secondaryTitle; }
     public List<RequestRow> getSecondaryList() { return secondaryList; }
     public void setSecondaryList(List<RequestRow> secondaryList) { this.secondaryList = secondaryList; }
+    public long getSharedPendingSignCount() { return sharedPendingSignCount; }
+    public void setSharedPendingSignCount(long sharedPendingSignCount) { this.sharedPendingSignCount = sharedPendingSignCount; }
 }

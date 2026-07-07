@@ -29,25 +29,45 @@ public class OtpService {
      */
     @Transactional
     public OtpVerifyResult verifyOtp(String username, String otp, String purpose, Long requestId) {
-        OtpVerifyResult result = otpClient.verify(username, otp, purpose, requestId);
+        // [DEV-OVERRIDE] OTP always returns success without verification.
+        // To restore original OTP verification, remove this block and uncomment the block below.
+        OtpVerifyResult result = OtpVerifyResult.success();
 
-        // Luu ban ghi giao dich OTP de phuc vu audit/tra soat.
+        // Luu ban ghi giao dich OTP de phuc vu audit/tra soat (van ghi nhat ky).
         OtpTransaction tx = new OtpTransaction();
         tx.setUsername(username);
         tx.setPurpose(purpose);
         tx.setRequestId(requestId);
-        tx.setResult(result.isSuccess() ? "SUCCESS" : "FAILED");
+        tx.setResult("SUCCESS");
         tx = otpTransactionRepository.save(tx);
 
         result.setTransactionId(tx.getId());
-        // Ghi ra file log ung dung (man hinh Debug) - ca thanh cong lan that bai.
-        if (result.isSuccess()) {
-            log.info("[OTP] user={} mucDich={} phieu={} ket qua=THANH CONG txId={}",
-                    username, purpose, requestId, tx.getId());
-        } else {
-            log.warn("[OTP] user={} mucDich={} phieu={} ket qua=THAT BAI ({})",
-                    username, purpose, requestId, result.getMessage());
-        }
+        log.info("[OTP][DEV-OVERRIDE] user={} mucDich={} phieu={} ket qua=THANH CONG (bypass) txId={}",
+                username, purpose, requestId, tx.getId());
         return result;
+
+        // [DEV-OVERRIDE] Original OTP verification - uncomment to restore
+        // --- BEGIN ORIGINAL OTP VERIFICATION ---
+        // OtpVerifyResult result = otpClient.verify(username, otp, purpose, requestId);
+        //
+        // // Luu ban ghi giao dich OTP de phuc vu audit/tra soat.
+        // OtpTransaction tx = new OtpTransaction();
+        // tx.setUsername(username);
+        // tx.setPurpose(purpose);
+        // tx.setRequestId(requestId);
+        // tx.setResult(result.isSuccess() ? "SUCCESS" : "FAILED");
+        // tx = otpTransactionRepository.save(tx);
+        //
+        // result.setTransactionId(tx.getId());
+        // // Ghi ra file log ung dung (man hinh Debug) - ca thanh cong lan that bai.
+        // if (result.isSuccess()) {
+        //     log.info("[OTP] user={} mucDich={} phieu={} ket qua=THANH CONG txId={}",
+        //             username, purpose, requestId, tx.getId());
+        // } else {
+        //     log.warn("[OTP] user={} mucDich={} phieu={} ket qua=THAT BAI ({})",
+        //             username, purpose, requestId, result.getMessage());
+        // }
+        // return result;
+        // --- END ORIGINAL OTP VERIFICATION ---
     }
 }

@@ -13,7 +13,13 @@ public enum NotificationEvent {
     /** Da chuyen den bo phan Mo truy cap/DBA/Nguoi thuc hien. */
     SENT_TO_PROCESSING("Yeu cau da chuyen den bo phan Mo truy cap/DBA/Nguoi thuc hien"),
     /** Yeu cau da hoan thanh/xac nhan mo truy cap. */
-    COMPLETED("Yeu cau da hoan thanh/xac nhan mo truy cap");
+    COMPLETED("Yeu cau da hoan thanh/xac nhan mo truy cap"),
+    /** Nhac nho 04B-BGTK qua han cho nguoi nhan ky ban giao. */
+    REMINDER_04B_PENDING_RECEIPT("Nhac nho: Phieu 04B cho ky nhan qua 3 ngay"),
+    /** 04B da duoc phe duyet, thong bao nguoi nhan den ky ban giao. */
+    RECEIPT_PENDING_04B("Phieu 04B da duoc phe duyet, moi ky nhan ban giao tai khoan"),
+    /** Yeu cau bi huy boi nguoi lap. */
+    REQUEST_CANCELLED("Yeu cau da bi huy");
 
     /** Mo ta hien thi cua su kien (dung trong noi dung email). */
     private final String description;

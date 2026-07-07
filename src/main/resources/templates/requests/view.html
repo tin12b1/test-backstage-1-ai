@@ -11,14 +11,23 @@
         <h2 th:text="'Yeu cau ' + ${request.requestCode}">Yeu cau</h2>
         <table>
             <tr><th style="width:220px">Loai yeu cau</th><td th:text="${row.requestType}"></td></tr>
+            <tr th:if="${request.subType != null}"><th>Phan loai</th><td th:text="${request.subType}"></td></tr>
             <tr><th>Nguoi lap</th><td th:text="${row.requesterName}"></td></tr>
             <tr><th>Don vi yeu cau</th><td th:text="${row.requesterUnit}"></td></tr>
-            <tr><th>He thong / CSDL</th><td th:text="${row.systemName + ' / ' + row.databaseName}"></td></tr>
+            <!-- He thong / CSDL chi hien cho cac mau khong phai 01-YCTC -->
+            <tr th:unless="${request.requestType.name() == 'YCTC_01'}">
+                <th>He thong / CSDL</th><td th:text="${(row.systemName ?: '') + (row.databaseName != null and !row.databaseName.isEmpty() ? ' / ' + row.databaseName : '')}"></td></tr>
             <tr><th>Thoi gian truy cap</th>
-                <td th:text="${row.startTime} + ' - ' + ${row.endTime}"></td></tr>
+                <td>
+                    <span th:if="${row.startTime != null}"
+                          th:text="${#temporals.format(row.startTime, 'dd/MM/yyyy HH:mm') + ' - ' + #temporals.format(row.endTime, 'dd/MM/yyyy HH:mm')}"></span>
+                    <span th:if="${row.startTime == null and request.shiftNo != null}"
+                          th:text="'Ca ' + ${request.shiftNo}"></span>
+                    <span th:if="${row.startTime == null and request.shiftNo == null}">-</span>
+                </td></tr>
             <tr><th>Ly do</th><td th:text="${request.reason}"></td></tr>
             <tr><th>Trang thai</th><td><span class="badge" th:text="${row.statusLabel}"></span></td></tr>
-            <tr><th>Dang xu ly (vai tro)</th><td th:text="${request.currentActorRole}"></td></tr>
+            <tr><th>Dang xu ly (vai tro)</th><td th:text="${row.currentActorRole}"></td></tr>
         </table>
 
         <div class="grid-actions">
@@ -33,10 +42,33 @@
     </div>
 
     <div class="card" th:if="${!details.isEmpty()}">
-        <h3>Chi tiet</h3>
-        <table>
+        <h3>Chi tiết</h3>
+
+        <!-- 01-YCTC: He thong, CSDL, Ten doi tuong, Quyen truy cap, Ho va ten, Trang thai ky -->
+        <table th:if="${request.requestType.name() == 'YCTC_01'}">
             <thead>
-            <tr><th>CSDL</th><th>Owner</th><th>Doi tuong</th><th>Nguoi su dung</th><th>Quyen</th><th>QueryAll</th><th>Muc dich</th></tr>
+            <tr><th>STT</th><th>Hệ thống</th><th>CSDL</th><th>Tên đối tượng</th><th>Quyền truy cập</th><th>Họ và tên</th><th>Trạng thái ký</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="d, stat : ${details}">
+                <td th:text="${stat.count}"></td>
+                <td th:text="${lookup.systemName(d.systemId)}"></td>
+                <td th:text="${lookup.databaseName(d.databaseId)}"></td>
+                <td th:text="${d.objectName}"></td>
+                <td th:text="${d.accessRights}"></td>
+                <td th:text="${lookup.userName(d.targetUserId)}"></td>
+                <td>
+                    <span class="badge badge-green" th:if="${signedDetailIds.contains(d.id)}">Đã ký</span>
+                    <span class="text-muted" th:unless="${signedDetailIds.contains(d.id)}">Chưa ký</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <!-- Cac mau khac: giu nguyen cot cu -->
+        <table th:unless="${request.requestType.name() == 'YCTC_01'}">
+            <thead>
+            <tr><th>CSDL</th><th>Owner</th><th>Đối tượng</th><th>Người sử dụng</th><th>Quyền</th><th>QueryAll</th><th>Mục đích</th></tr>
             </thead>
             <tbody>
             <tr th:each="d : ${details}">
@@ -45,7 +77,7 @@
                 <td th:text="${d.objectName}"></td>
                 <td th:text="${lookup.userName(d.targetUserId)}"></td>
                 <td th:text="${d.accessRights}"></td>
-                <td th:text="${d.queryAll} ? 'Co' : ''"></td>
+                <td th:text="${d.queryAll} ? 'Có' : ''"></td>
                 <td th:text="${d.purpose}"></td>
             </tr>
             </tbody>
@@ -63,8 +95,8 @@
                 <td th:text="${#temporals.format(h.processedAt, 'dd/MM/yyyy HH:mm')}"></td>
                 <td th:text="${h.actorRoleCode}"></td>
                 <td th:text="${h.action}"></td>
-                <td th:text="${h.fromStatus} + ' -> ' + ${h.toStatus}"></td>
-                <td th:text="${h.comment}"></td>
+                <td th:text="${(h.fromStatus != null ? h.fromStatus : '') + ' -> ' + (h.toStatus != null ? h.toStatus : '')}"></td>
+                <td th:text="${h.commentText}"></td>
             </tr>
             <tr th:if="${history.isEmpty()}"><td colspan="5" class="text-muted">Chua co buoc xu ly.</td></tr>
             </tbody>

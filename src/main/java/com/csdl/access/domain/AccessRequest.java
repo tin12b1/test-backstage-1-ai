@@ -91,6 +91,22 @@ public class AccessRequest {
     @Column(name = "owner_db_unit_id")
     private Long ownerDbUnitId;
 
+    /** 04B-BGTK: phieu 04A-YCTK duoc lien ket ban giao. */
+    @Column(name = "source_request_id")
+    private Long sourceRequestId;
+
+    /** 04B-BGTK: nguoi nhan ban giao tai khoan (deprecated, dung detail rows). */
+    @Column(name = "receiver_user_id")
+    private Long receiverUserId;
+
+    /** 04B-BGTK: lanh dao phong phu trach nguoi ban giao (DBA). */
+    @Column(name = "handover_manager_id")
+    private Long handoverManagerId;
+
+    /** 04B-BGTK: lanh dao phong phu trach nguoi nhan ban giao. */
+    @Column(name = "receiver_manager_id")
+    private Long receiverManagerId;
+
     /** Danh dau giai doan trong luong cua don vi yeu cau (true) hay chu quan (false). */
     @Column(name = "at_requester_phase")
     private boolean atRequesterPhase = true;
@@ -109,6 +125,14 @@ public class AccessRequest {
 
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
+
+    /** 01-YCTC: Loai yeu cau phu (Truy van / Chinh sua). */
+    @Column(name = "sub_type", length = 30)
+    private String subType;
+
+    /** Hash noi dung form (MD5) dung cho dirty check khi auto-save. */
+    @Column(name = "content_hash", length = 64)
+    private String contentHash;
 
     @PrePersist
     void onCreate() {

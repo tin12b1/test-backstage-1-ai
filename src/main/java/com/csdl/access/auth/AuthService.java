@@ -63,48 +63,73 @@ public class AuthService {
      */
     @Transactional
     public LoginResult login(String username, String password, String ipAddress) {
-        // Buoc 1: xac thuc voi Active Directory
-        AdAuthResult adResult = adClient.authenticate(username, password);
-        if (!adResult.isSuccess()) {
-            // Chuyen doi trang thai loi AD sang trang thai ket qua dang nhap
-            LoginResult.Status status;
-            switch (adResult.getStatus()) {
-                case USER_LOCKED:
-                    status = LoginResult.Status.USER_LOCKED;
-                    break;
-                case CONNECTION_ERROR:
-                    status = LoginResult.Status.CONNECTION_ERROR;
-                    break;
-                default:
-                    status = LoginResult.Status.BAD_CREDENTIALS;
-            }
-            writeLog(username, false, adResult.getMessage(), ipAddress);
-            return new LoginResult(status, adResult.getMessage());
-        }
-
-        // Buoc 2: AD ok nhung phai da dang ky va con hoat dong tren he thong
+        // [DEV-OVERRIDE] Dev-mode login: bypass AD, authenticate by DB lookup only.
+        // If user exists in app_user with status ACTIVE, allow login without password check.
+        // To restore original AD authentication, remove this block and uncomment the block below.
         Optional<AppUser> userOpt = appUserRepository.findByUsernameIgnoreCase(username);
-        if (userOpt.isEmpty() || !userOpt.get().isActive()) {
-            writeLog(username, false, "Chưa đăng ký trên hệ thống hoặc đã bị khóa", ipAddress);
-            return new LoginResult(LoginResult.Status.NOT_REGISTERED,
-                    "Tài khoản chưa được đăng ký vai trò trên hệ thống");
+        if (userOpt.isPresent() && userOpt.get().isActive()) {
+            AppUser user = userOpt.get();
+            List<RoleCode> roles = resolveActiveRoles(user.getId());
+            if (roles.isEmpty()) {
+                writeLog(username, false, "[DEV] Không có vai trò active", ipAddress);
+                return new LoginResult(LoginResult.Status.NOT_REGISTERED,
+                        "Tài khoản chưa được gán vai trò active");
+            }
+            writeLog(username, true, "[DEV] Đăng nhập thành công (bypass AD)", ipAddress);
+            LoginResult result = new LoginResult(LoginResult.Status.SUCCESS, "OK");
+            result.setUser(user);
+            result.setRoles(roles);
+            return result;
         }
-
-        // Buoc 3: phai co it nhat mot vai tro active
-        AppUser user = userOpt.get();
-        List<RoleCode> roles = resolveActiveRoles(user.getId());
-        if (roles.isEmpty()) {
-            writeLog(username, false, "Không có vai trò active", ipAddress);
-            return new LoginResult(LoginResult.Status.NOT_REGISTERED,
-                    "Tài khoản chưa được gán vai trò active");
-        }
-
-        // Thanh cong: tra ve user va danh sach vai tro de controller khoi tao session
-        writeLog(username, true, "Đăng nhập thành công", ipAddress);
-        LoginResult result = new LoginResult(LoginResult.Status.SUCCESS, "OK");
-        result.setUser(user);
-        result.setRoles(roles);
-        return result;
+        // User not found or inactive in dev mode
+        writeLog(username, false, "[DEV] Không tìm thấy user hoặc đã bị khóa", ipAddress);
+        return new LoginResult(LoginResult.Status.NOT_REGISTERED,
+                "Tài khoản chưa được đăng ký trên hệ thống (dev mode)");
+        // [DEV-OVERRIDE] Original AD authentication - uncomment to restore
+        // --- BEGIN ORIGINAL AD LOGIN ---
+        // // Buoc 1: xac thuc voi Active Directory
+        // AdAuthResult adResult = adClient.authenticate(username, password);
+        // if (!adResult.isSuccess()) {
+        //     // Chuyen doi trang thai loi AD sang trang thai ket qua dang nhap
+        //     LoginResult.Status status;
+        //     switch (adResult.getStatus()) {
+        //         case USER_LOCKED:
+        //             status = LoginResult.Status.USER_LOCKED;
+        //             break;
+        //         case CONNECTION_ERROR:
+        //             status = LoginResult.Status.CONNECTION_ERROR;
+        //             break;
+        //         default:
+        //             status = LoginResult.Status.BAD_CREDENTIALS;
+        //     }
+        //     writeLog(username, false, adResult.getMessage(), ipAddress);
+        //     return new LoginResult(status, adResult.getMessage());
+        // }
+        //
+        // // Buoc 2: AD ok nhung phai da dang ky va con hoat dong tren he thong
+        // Optional<AppUser> userOpt = appUserRepository.findByUsernameIgnoreCase(username);
+        // if (userOpt.isEmpty() || !userOpt.get().isActive()) {
+        //     writeLog(username, false, "Chưa đăng ký trên hệ thống hoặc đã bị khóa", ipAddress);
+        //     return new LoginResult(LoginResult.Status.NOT_REGISTERED,
+        //             "Tài khoản chưa được đăng ký vai trò trên hệ thống");
+        // }
+        //
+        // // Buoc 3: phai co it nhat mot vai tro active
+        // AppUser user = userOpt.get();
+        // List<RoleCode> roles = resolveActiveRoles(user.getId());
+        // if (roles.isEmpty()) {
+        //     writeLog(username, false, "Không có vai trò active", ipAddress);
+        //     return new LoginResult(LoginResult.Status.NOT_REGISTERED,
+        //             "Tài khoản chưa được gán vai trò active");
+        // }
+        //
+        // // Thanh cong: tra ve user va danh sach vai tro de controller khoi tao session
+        // writeLog(username, true, "Đăng nhập thành công", ipAddress);
+        // LoginResult result = new LoginResult(LoginResult.Status.SUCCESS, "OK");
+        // result.setUser(user);
+        // result.setRoles(roles);
+        // return result;
+        // --- END ORIGINAL AD LOGIN ---
     }
 
     /** Tra ve danh sach vai tro active cua user, khong trung. */

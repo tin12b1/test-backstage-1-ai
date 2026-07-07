@@ -113,9 +113,8 @@ public class WorkflowService {
                 return r.getOwnerUnitId();
             case OWNER_DB_UNIT:
                 return r.getOwnerDbUnitId();
-            case ACCESS_TEAM:
             default:
-                return null;
+                return r.getOwnerUnitId();
         }
     }
 }

@@ -218,23 +218,39 @@ Liên kết phiếu 05B-HTKC với phiếu 05A-YCKC.
 | completion_request_id | Phiếu 05B |
 | created_at | Thời gian liên kết |
 
-### `access_registration`
+### `pre_registration_request`
 
-Bảng dữ liệu đăng ký chi tiết từ màn hình 01YCTC_Dangky. Nút "Lấy dữ liệu đã đăng ký" trên màn lập yêu cầu 01-YCTC quét/nạp lại các bản ghi này thành dòng chi tiết.
+Bảng đăng ký trước yêu cầu chi tiết (màn hình 01YCTC_Dangky). Thay thế bảng `access_registration` cũ với schema đầy đủ hỗ trợ lifecycle quản lý trạng thái, ký OTP, và liên kết tự động vào phiếu 01-YCTC.
 
 | Cột | Mô tả |
 |---|---|
-| id | Khóa chính |
-| requester_user_id | Người đăng ký (app_user.id) |
+| id | Khóa chính (IDENTITY) |
+| user_id | Người đăng ký (FK → app_user.id) |
+| unit_code | Mã đơn vị — dùng để lọc theo đơn vị khi nạp vào phiếu |
+| register_date | Ngày đăng ký truy cập (DATE) |
+| shift | Ca làm việc (1/2/3) |
+| request_type | Loại yêu cầu: "Truy vấn" / "Chỉnh sửa" |
 | system_id | Hệ thống thông tin |
 | database_id | CSDL |
 | object_name | Tên đối tượng (mặc định "All Schema") |
 | access_rights | CSV mã quyền, ví dụ `SELECT,INSERT,UPDATE,DELETE` |
-| shift_no | Ca (1/2/3) |
-| from_date | Từ ngày |
-| to_date | Đến ngày |
-| signed | Đã ký OTP tại mục chi tiết hay chưa |
-| created_at | Thời điểm đăng ký |
+| signed_at | Thời điểm ký OTP xác nhận |
+| signature_image_id | Ảnh chữ ký (FK → signature_image.id) |
+| status | Trạng thái: UNUSED / PENDING_APPROVAL / USED / EXPIRED |
+| request_id | FK nullable → access_request.id (phiếu 01-YCTC liên kết) |
+| created_at | Thời điểm tạo |
+| updated_at | Thời điểm cập nhật |
+| version | Optimistic locking version |
+
+**Indexes:**
+- `ix_prereg_user_status` ON (user_id, status)
+- `ix_prereg_unit_date_shift` ON (unit_code, register_date, shift, status)
+
+**Lifecycle trạng thái:**
+- `UNUSED` → đăng ký xong, chờ nạp vào phiếu
+- `PENDING_APPROVAL` → đã nạp vào phiếu 01-YCTC, đang chờ duyệt
+- `USED` → phiếu 01-YCTC đã hoàn thành cấp quyền
+- `EXPIRED` → hết hạn (ngày+ca đã qua mà chưa được sử dụng)
 
 ## 3. Workflow và ký xác nhận
 

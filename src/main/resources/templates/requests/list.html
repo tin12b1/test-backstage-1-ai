@@ -4,6 +4,34 @@
 <body>
 <nav th:replace="fragments/layout :: navbar"></nav>
 <div class="container">
+    <!-- Phieu cho ky chung — cung don vi (shown FIRST for visibility) -->
+    <div class="card" th:if="${!sharedRows.isEmpty()}" style="border-left: 4px solid #e6a817;">
+        <h2>Phieu cho ky chung (cung don vi)
+            <span class="badge badge-gold" th:text="${sharedRows.size()}">0</span>
+        </h2>
+        <p class="text-muted">Cac phieu 01-YCTC / 04A-YCTK dang cho ky xac nhan tu dong nghiep cung don vi. Ban co the them dong chi tiet hoac ky nhan.</p>
+        <table>
+            <thead>
+            <tr>
+                <th>Ma yeu cau</th>
+                <th>Loai</th>
+                <th>Nguoi lap</th>
+                <th>Trang thai</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${sharedRows}">
+                <td th:text="${r.requestCode}"></td>
+                <td th:text="${r.requestType}"></td>
+                <td th:text="${r.requesterName}"></td>
+                <td><span class="badge">Cho ky xac nhan</span></td>
+                <td><a class="btn btn-sm btn-gold" th:href="@{'/requests/' + ${r.id} + '/edit'}">Xem / Ky</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
     <div class="card">
         <h2>Yeu cau cua toi</h2>
         <p><a class="btn" th:href="@{/requests/new}">+ Lap yeu cau moi</a></p>
@@ -22,7 +50,7 @@
             <tr th:each="r : ${rows}">
                 <td th:text="${r.requestCode}"></td>
                 <td th:text="${r.requestType}"></td>
-                <td th:text="${r.systemName + ' / ' + r.databaseName}"></td>
+                <td th:text="${r.databaseName != null and !r.databaseName.isEmpty()} ? ${r.systemName + ' / ' + r.databaseName} : ${r.systemName}"></td>
                 <td><span class="badge" th:text="${r.statusLabel}"></span></td>
                 <td th:text="${r.currentActorRole}"></td>
                 <td><a class="btn btn-sm" th:href="@{'/requests/' + ${r.id}}">Xem</a></td>
@@ -33,6 +61,7 @@
             </tbody>
         </table>
     </div>
+
 </div>
 <footer th:replace="fragments/layout :: footer"></footer>
 </body>

@@ -6,6 +6,7 @@ import java.util.List;
 /** Du lieu form lap/sua yeu cau (chung cho cac mau phieu). */
 public class RequestForm {
 
+    private Long id;                      // null = new draft, non-null = update existing
     private String requestType;
     private Integer shiftNo;
     private Integer accessNo;
@@ -16,9 +17,12 @@ public class RequestForm {
     private String expectedExecutionDate; // 03-YCCT
     private String reason;
     private Long emergencyRequestId;      // 05B: lien ket toi 05A
+    private String requestSubType;        // 01-YCTC: Truy van / Chinh sua
 
     private List<DetailForm> details = new ArrayList<>();
 
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getRequestType() { return requestType; }
     public void setRequestType(String requestType) { this.requestType = requestType; }
     public Integer getShiftNo() { return shiftNo; }
@@ -39,6 +43,8 @@ public class RequestForm {
     public void setReason(String reason) { this.reason = reason; }
     public Long getEmergencyRequestId() { return emergencyRequestId; }
     public void setEmergencyRequestId(Long emergencyRequestId) { this.emergencyRequestId = emergencyRequestId; }
+    public String getRequestSubType() { return requestSubType; }
+    public void setRequestSubType(String requestSubType) { this.requestSubType = requestSubType; }
     public List<DetailForm> getDetails() { return details; }
     public void setDetails(List<DetailForm> details) { this.details = details; }
 }

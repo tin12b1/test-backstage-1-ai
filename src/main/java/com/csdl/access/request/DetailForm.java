@@ -3,6 +3,7 @@ package com.csdl.access.request;
 /** Mot dong chi tiet trong form yeu cau (01-YCTC, 04A-YCTK, 05A, 05B). */
 public class DetailForm {
 
+    private Long id;
     private Long systemId;
     private Long databaseId;
     private String objectOwner;
@@ -12,10 +13,14 @@ public class DetailForm {
     private String accountOwnerName;
     private String accountType;
     private String accountAction;
+    private String scope;          // 04B: pham vi ban giao
     private String accessRights;   // CSV cac ma quyen
     private boolean queryAll;
     private String purpose;
+    private Long preRegistrationId;
 
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public Long getSystemId() { return systemId; }
     public void setSystemId(Long systemId) { this.systemId = systemId; }
     public Long getDatabaseId() { return databaseId; }
@@ -34,10 +39,14 @@ public class DetailForm {
     public void setAccountType(String accountType) { this.accountType = accountType; }
     public String getAccountAction() { return accountAction; }
     public void setAccountAction(String accountAction) { this.accountAction = accountAction; }
+    public String getScope() { return scope; }
+    public void setScope(String scope) { this.scope = scope; }
     public String getAccessRights() { return accessRights; }
     public void setAccessRights(String accessRights) { this.accessRights = accessRights; }
     public boolean isQueryAll() { return queryAll; }
     public void setQueryAll(boolean queryAll) { this.queryAll = queryAll; }
     public String getPurpose() { return purpose; }
     public void setPurpose(String purpose) { this.purpose = purpose; }
+    public Long getPreRegistrationId() { return preRegistrationId; }
+    public void setPreRegistrationId(Long preRegistrationId) { this.preRegistrationId = preRegistrationId; }
 }

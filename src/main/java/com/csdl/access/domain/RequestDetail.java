@@ -50,6 +50,10 @@ public class RequestDetail {
     @Column(name = "account_action", length = 30)
     private String accountAction;
 
+    /** 04B-BGTK: pham vi ban giao (Toan bo/Theo he thong/Theo CSDL/Theo doi tuong). */
+    @Column(name = "scope", length = 200)
+    private String scope;
+
     /** Quyen truy cap dang ma hoac JSON. */
     @Column(name = "access_rights", length = 500)
     private String accessRights;

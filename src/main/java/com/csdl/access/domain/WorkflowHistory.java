@@ -43,8 +43,8 @@ public class WorkflowHistory {
     @Column(length = 20)
     private WorkflowAction action;
 
-    @Column(length = 2000)
-    private String comment;
+    @Column(name = "comment_text", length = 2000)
+    private String commentText;
 
     @Column(name = "processed_at")
     private LocalDateTime processedAt = LocalDateTime.now();
