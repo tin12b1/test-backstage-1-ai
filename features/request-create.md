@@ -1,24 +1,8 @@
-
+﻿
 # Feature: Chức năng lập và gửi yêu cầu
 
 **Người phụ trách:** Tin  
 **Mã hạng mục:** 2.3
-
----
-
-## Changelog
-
-| Thời điểm | Nội dung thay đổi |
-|---|---|
-| 05/07/2026 16:57 | Cập nhật toàn bộ theo bản đề xuất FINAL v1.0: Bổ sung mẫu 04B-BGTK; Tách luồng 05B ra khỏi luồng 02,03; Cập nhật luồng 01/04A/05A; Thêm luồng 04B+05B; Thêm hệ thống trạng thái; Thêm Validation Rules; Cập nhật giao diện tất cả mẫu; Cập nhật quy tắc nghiệp vụ; Cập nhật Verification + DoD |
-| 05/07/2026 20:25 | Bổ sung chức năng con "Đăng ký trước Yêu cầu chi tiết" cho mẫu 01-YCTC: Giao diện đăng ký trước, bảng CSDL pre_registration_request, logic nạp tự động, hệ thống trạng thái bản ghi, validation rules #16-#22, test cases bổ sung |
-| 06/07/2026 11:30 | Đồng bộ với docs/workflow-step-codes.md: Thêm bảng mapping Status Code ↔ Tên hiển thị (mục 7.1); Thêm mục 7.2 mô tả logic khởi tạo workflow khi SUBMIT (set variant, current_step_code, resolveNextActor) |
-| 08/07/2026 14:10 | Cập nhật: Format tên file SQL áp dụng cả 02+03 (chi tiết regex YYYYMMDD_BS_XXX.sql); Xóa giới hạn dung lượng file; Xóa trạng thái RETURNED (phiếu bị từ chối → CANCELLED, lập mới); Bổ sung bước khởi tạo workflow vào các luồng; Upload chỉ 1 file; Cập nhật logic bắt buộc Tab 03 (ít nhất 1 mục con); Bổ sung format tên file SQL vào mục 11+14; Bổ sung test cases |
-| 08/07/2026 16:10 | Cập nhật: Bổ sung bước chọn Ngày → Ca vào Luồng 1, 2 (01, 02, 03, 04A); Cập nhật Rule #2 chặn nợ 05B (logic mới: validate lúc ký số + validate lúc gửi phê duyệt + cho phép xóa dòng đã ký); Cập nhật Mục 10 quyền xóa/sửa dòng; Polling interval = 10 giây + push sau ký; Variant 04B luôn Internal, 05B không variant; Variant 01 lấy theo dòng đầu tiên; Cập nhật 04B (Phạm vi DBA nhập, Nội dung = Hình thức từ 04A); Cập nhật 05A (Query all data only); Cập nhật 05B (logic gửi email); Validate Nhánh A chỉ tối thiểu khi lưu |
-| 08/07/2026 17:06 | Bổ sung Mục 2.1 Role người dùng: Danh sách 8 role hệ thống; Quy tắc gán role (ADMIN gán, AD chỉ xác thực); Ràng buộc loại trừ DBA/ACCESS_TEAM không gán REQUESTER; Ma trận quyền scope lập yêu cầu; Ghi chú hành động REQUESTER (lập phiếu + ký chung) |
-| 09/07/2026 10:44 | Cập nhật: Logic nạp đăng ký trước khi đổi Ngày/Ca (xóa toàn bộ + nạp lại); Cho phép lưu phiếu 0 dòng Nhánh A; Bổ sung trường Ngày + bước chọn Ngày vào 05A (mặc định fill hiện tại); 04B chỉ phát sinh khi 04A có dòng "Cấp mới" + chỉ nạp dòng "Cấp mới"; Rule #2 chỉ áp dụng phiếu 01 (không áp dụng 04A); Bổ sung ghi chú scope bước 14-18 luồng 04B; Trường "Họ và tên" mẫu 01 = dropdown REQUESTER cùng phòng (người lập) / tự fill (người khác); Rule #15 cập nhật: 1 người nhiều dòng ký 1 lần tất cả dòng tự "Đã ký"; Mục 7.2 ghi rõ Nhánh A không khởi tạo workflow; Format mã yêu cầu: KýhiệuĐV_ddmmyyyy_Ca_Lần (unique toàn hệ thống, không ký hiệu mẫu, phân biệt qua form_type); Mẫu 05B sinh mã riêng + bảng tham chiếu request_05b_05a_mapping (1-N); Trường "Lần" tự tăng theo Ngày+Ca toàn hệ thống, format 2 chữ số (mở rộng 3 nếu vượt 99); Cập nhật mục 19.2 vị trí giao diện đăng ký trước |
-| 10/07/2026 10:00 | Đồng bộ với đặc tả v2.0: (1) Sinh mã chỉ khi gửi phê duyệt — DRAFT và PENDING_SIGN không sinh mã, cột Mã YC hiển thị "—", tìm kiếm qua metadata; (2) Timeout PENDING_SIGN hết ca → tự động CANCELLED + email; (3) Tách biệt logic xóa dòng chưa ký khi gửi duyệt (không liên quan timeout); (4) Cập nhật format mã 04B = [Mã 04A]_04B_V[xx], mã 05B = [Mã ĐV]_[ddmmyyyy]_[Ca]_[Lần ghép]_V[xx]; (5) Bổ sung trạng thái REJECTED, APPROVED, IN_PROGRESS (scope phê duyệt); (6) Giao diện 05A: bỏ trường "Ngày" riêng, "Ngày lập yêu cầu" = auto fill ngày hiện tại hoặc tương lai (date picker, không cho nhập); (7) Bổ sung Rule #16 Timeout PENDING_SIGN → CANCELLED; (8) Bổ sung mục Email Templates; (9) Bổ sung mục Phạm vi (In-scope/Out-of-scope), Thuật ngữ, Variant theo mẫu, Giao diện chọn mẫu, Filter ĐV chủ quản chi tiết, Logic Người lập = Người truy cập, Bảng mapping 04B/05B có version, Giả định bổ sung, Rủi ro bổ sung, DoD + Verification cập nhật |
-| 10/07/2026 10:30 | Bổ sung mục 32: Schema CSDL chính — 9 bảng (request, request_detail, request_04b_detail, request_sql_file, request_03_structure, request_sequence, workflow_history, email_notification_log) + ERD tóm tắt + ghi chú thiết kế |
 
 ---
 
@@ -32,128 +16,9 @@ Cho phép người lập yêu cầu đăng nhập, chọn mẫu phiếu, nhập 
 - 02-YCCS: Chỉnh sửa dữ liệu.
 - 03-YCCT: Thay đổi cấu trúc CSDL.
 - 04A-YCTK: Cấp mới/thay đổi thuộc tính tài khoản.
-- 04B-BGTK: Biên bản bàn giao tài khoản (DBA lập sau khi cấp thành công tài khoản theo 04A-YCTK).
+- 04B-BGTK: Biên bản bàn giao tài khoản (Người quản trị CSDL lập sau khi cấp thành công tài khoản theo 04A-YCTK).
 - 05A-YCKC: Truy cập khẩn cấp.
 - 05B-HTKC: Hoàn thành truy cập khẩn cấp.
-
-## 2.1 Role người dùng
-
-### Danh sách Role hệ thống
-
-| # | Code | Tên hiển thị | Mô tả | Scope |
-|---|---|---|---|---|
-| 1 | REQUESTER | Người lập yêu cầu | Tạo, ký, gửi yêu cầu | Lập yêu cầu |
-| 2 | DEPT_MANAGER | Trưởng phòng hoặc tương đương | Kiểm tra, ký, chuyển tiếp | Phê duyệt |
-| 3 | AUTHORITY | Người có thẩm quyền | Phê duyệt | Phê duyệt |
-| 4 | CHECKER | Bộ phận kiểm tra | Kiểm tra nội dung/script | Phê duyệt |
-| 5 | ACCESS_TEAM | Bộ phận mở truy cập | Mở truy cập, ghi thời gian | Phê duyệt |
-| 6 | DBA | Quản trị CSDL/DBA | Xử lý cấu trúc/tài khoản | Lập yêu cầu + Phê duyệt |
-| 7 | EXECUTOR | Người thực hiện | Chạy script/chỉnh sửa dữ liệu | Phê duyệt |
-| 8 | ADMIN | Quản trị hệ thống | Cấu hình hệ thống | Quản trị |
-
-### Quy tắc gán Role
-
-- Tất cả role do **ADMIN gán** trong hệ thống (không tự động từ AD).
-- AD chỉ dùng để xác thực đăng nhập (authentication), không dùng để phân quyền (authorization).
-- 1 người dùng có thể có **nhiều role** đồng thời.
-- **Ràng buộc loại trừ:** DBA và ACCESS_TEAM **KHÔNG được gán** role REQUESTER.
-  - Lý do: DBA đã có toàn quyền trên CSDL, không có nhu cầu lập phiếu yêu cầu truy cập.
-  - ACCESS_TEAM không lập phiếu nào trong scope lập yêu cầu.
-
-### Ma trận quyền — Scope lập yêu cầu
-
-| Hành động | REQUESTER | DBA | ADMIN |
-|---|---|---|---|
-| Lập mẫu 01-YCTC | ✅ | — | — |
-| Lập mẫu 02-YCCS | ✅ | — | — |
-| Lập mẫu 03-YCCT | ✅ | — | — |
-| Lập mẫu 04A-YCTK | ✅ | — | — |
-| Lập mẫu 04B-BGTK | — | ✅ | — |
-| Lập mẫu 05A-YCKC | ✅ | — | — |
-| Lập mẫu 05B-HTKC | ✅ (*) | — | — |
-| Đăng ký trước (01) | ✅ | — | — |
-| Ký chung phiếu 01/04A | ✅ | — | — |
-| Ký nhận 04B | ✅ (**) | — | — |
-| Xóa dòng trên phiếu (người lập) | ✅ | ✅ (04B) | — |
-| Hủy phiếu (người lập) | ✅ | ✅ (04B) | — |
-| Gán role cho người dùng | — | — | ✅ |
-| Cấu hình danh mục HT/CSDL | — | — | ✅ |
-
-(*) 05B-HTKC: Chỉ REQUESTER đã lập 05A tương ứng mới được lập 05B.
-(**) Ký nhận 04B: REQUESTER đã lập 04A trước đó, có tên trong danh sách người nhận bàn giao.
-
-### Ghi chú
-
-- **REQUESTER** có 2 hành động chính:
-  - **(a) Lập phiếu:** Tạo mới, nhập thông tin, ký gửi phê duyệt/kiểm tra.
-  - **(b) Ký chung:** Thêm dòng + ký xác nhận trên phiếu 01/04A do người khác lập (cùng đơn vị, trạng thái "Chờ ký xác nhận"). Bất kỳ REQUESTER nào cùng đơn vị đều có thể ký chung.
-- **DBA:** Mặc định chỉ hiển thị mẫu 04B-BGTK. REQUESTER mặc định KHÔNG hiển thị 04B.
-- **EXECUTOR:** Hoàn toàn thuộc scope phê duyệt — không có hành động nào trong scope lập yêu cầu.
-- Các role DEPT_MANAGER, AUTHORITY, CHECKER, ACCESS_TEAM, EXECUTOR thuộc **scope phê duyệt** — không mô tả chi tiết trong file này.
-
-## 2.2 Format Mã yêu cầu
-
-**Format:** `KýhiệuĐV_ddmmyyyy_Ca_Lần`
-
-| Thành phần | Mô tả | Ví dụ |
-|---|---|---|
-| Ký hiệu ĐV | Từ bảng cấu hình đơn vị (đã có sẵn). Format: ĐơnVịCha-PhòngBan | CNTT-NHDT, NHS-KT |
-| ddmmyyyy | Ngày lập phiếu | 09072026 |
-| Ca | Số, format 2 chữ số | 01, 02, 03 |
-| Lần | Số, format 2 chữ số (mở rộng 3 chữ số nếu vượt 99). Tự tăng theo cùng Ngày + Ca toàn hệ thống (không phân biệt đơn vị, không phân biệt mẫu phiếu) | 01, 02, 03... |
-
-**Ví dụ:** `CNTT-NHDT_09072026_02_03` = Phòng NHDT thuộc TT CNTT, ngày 09/07/2026, Ca 2, phiếu thứ 3 trong ca đó (toàn hệ thống).
-
-**Quy tắc:**
-- Unique toàn hệ thống (không trùng giữa các mẫu phiếu).
-- Không có ký hiệu mẫu phiếu trong mã. Hệ thống phân biệt loại phiếu qua trường `form_type` trong CSDL.
-- Separator: gạch dưới `_` giữa các thành phần.
-- Sequence "Lần": 1 sequence duy nhất cho toàn hệ thống, tăng theo Ngày + Ca.
-
-**Thời điểm sinh mã:**
-- DRAFT → không sinh mã.
-- PENDING_SIGN → không sinh mã. Cột "Mã yêu cầu" hiển thị "—".
-- Gửi phê duyệt (chuyển sang PENDING_APPROVAL / PENDING_CHECK / PENDING_ACCESS_TEAM) → **SINH MÃ**. Ngày trong mã = ngày gửi phê duyệt.
-
-**Hiển thị phiếu chưa sinh mã:**
-- Phiếu ở trạng thái DRAFT / PENDING_SIGN được tìm kiếm/hiển thị qua metadata: Người lập + Ngày tạo + Loại mẫu + Trạng thái.
-- Danh sách phiếu chờ ký: hiển thị cột "Loại mẫu", không hiển thị mã.
-- Người cùng phòng tìm phiếu chờ ký qua: Filter trạng thái = PENDING_SIGN + Phòng ban mình.
-
-### 2.2.1 Format mã 04B-BGTK
-
-**Format:** `[Mã 04A]_04B_V[xx]`
-
-| Thành phần | Mô tả | Ví dụ |
-|---|---|---|
-| Mã 04A | Mã yêu cầu của phiếu 04A tham chiếu | CNTT-NHDT_09072026_02_03 |
-| 04B | Ký hiệu mẫu phiếu bổ sung | 04B |
-| V[xx] | Version, 2 chữ số, tăng khi hủy + lập lại | V01, V02 |
-
-**Ví dụ:** `CNTT-NHDT_09072026_02_03_04B_V01`
-
-**Quy tắc:**
-- Nhiều lần phát sinh (lần đầu bị hủy, lập lại) → tăng version: _V02, _V03...
-- Lưu bảng `request_04b_04a_mapping` (có version, status).
-
-### 2.2.2 Format mã 05B-HTKC
-
-**Format:** `[Mã ĐV]_[ddmmyyyy]_[Ca]_[Lần ghép]_V[xx]`
-
-| Thành phần | Mô tả | Ví dụ |
-|---|---|---|
-| Mã ĐV | Ký hiệu đơn vị người lập (lấy từ 05A) | CNTT-NHDT |
-| ddmmyyyy | Ngày (lấy từ 05A) | 09072026 |
-| Ca | Ca (lấy từ 05A) | 02 |
-| Lần ghép | Ghép số thứ tự các lần 05A thuộc nhóm gộp | 0103 |
-| V[xx] | Version, 2 chữ số | V01 |
-
-**Ví dụ:** Ca 02 có 3 phiếu 05A (lần 01, 02, 03), gộp lần 01 và 03 → `CNTT-NHDT_09072026_02_0103_V01`
-
-**Quy tắc:**
-- Chỉ ghép lần thuộc nhóm gộp (không phải toàn bộ lần trong ca).
-- Hủy + lập lại → tăng version.
-- Lưu bảng `request_05b_05a_mapping` (có version, status).
 
 ## 3. Luồng 1: 02-YCCS, 03-YCCT (Gửi bộ phận kiểm tra)
 
@@ -249,33 +114,33 @@ b) **Hủy phiếu:**
 
 ## 6. Luồng 4: 04B-BGTK, 05B-HTKC (Phiếu bổ sung sau hoàn thành)
 
-### 6.1 Luồng 04B-BGTK (DBA lập)
+### 6.1 Luồng 04B-BGTK (Người quản trị CSDL lập)
 
-**Điều kiện hiển thị:** Chỉ hiển thị đối với DBA (kiểm tra quyền).
+**Điều kiện hiển thị:** Chỉ hiển thị đối với người quản trị CSDL (kiểm tra quyền).
 **Điều kiện lập:** Phiếu 04A-YCTK liên quan phải ở trạng thái "Hoàn thành" VÀ phải có ít nhất 1 dòng chi tiết có Hình thức = "Cấp mới".
 
-1. DBA đăng nhập bằng tài khoản AD.
+1. Người quản trị CSDL đăng nhập bằng tài khoản AD.
 2. Chọn chức năng "Lập yêu cầu", mẫu 04B-BGTK.
 3. Hệ thống hiển thị danh sách 04A-YCTK đã hoàn thành, có ít nhất 1 dòng "Cấp mới", nhưng chưa có 04B-BGTK tương ứng.
-4. DBA chọn phiếu đang nợ.
+4. Người quản trị CSDL chọn phiếu đang nợ.
 5. Hệ thống tự động fill nội dung từ 04A-YCTK:
    - Tên hệ thống, Tên CSDL.
    - Mã yêu cầu 04A liên quan.
    - Thời gian bàn giao (ngày hiện tại).
    - Đại diện BP quản trị CSDL (Cấp QL) — từ cấu hình.
-   - Người bàn giao (DBA) — user đăng nhập.
+   - Người bàn giao (Người quản trị CSDL) — user đăng nhập.
    - Đại diện BP nhận bàn giao (Cấp QL) — lãnh đạo phòng người yêu cầu.
    - Người nhận bàn giao — danh sách người dùng từ 04A (chỉ những người có Hình thức = "Cấp mới").
    - Chi tiết: Chỉ nạp các dòng có Hình thức = "Cấp mới" từ 04A (KHÔNG nạp dòng "Đổi thuộc tính"). Gồm: Loại tài khoản, Nội dung (= "Cấp mới"), Chủ tài khoản.
-   - **KHÔNG tự fill:** Tài khoản được cấp (UserID) — DBA nhập tay. Phạm vi — DBA tự nhập.
-6. DBA nhập thông tin tài khoản đã cấp + Phạm vi + Địa điểm bàn giao.
-7. DBA ký xác nhận.
+   - **KHÔNG tự fill:** Tài khoản được cấp (UserID) — Người quản trị CSDL nhập tay. Phạm vi — Người quản trị CSDL tự nhập.
+6. Người quản trị CSDL nhập thông tin tài khoản đã cấp + Phạm vi + Địa điểm bàn giao.
+7. Người quản trị CSDL ký xác nhận.
 8. Hệ thống kiểm tra trường bắt buộc + validation rules.
 9. Hệ thống sinh mã yêu cầu.
 10. Hệ thống lưu hồ sơ ở trạng thái `Chờ phê duyệt`.
-11. Hệ thống khởi tạo workflow: Variant luôn = `I` (Internal — DBA thuộc đơn vị chủ quản CSDL), set `current_step_code`, gọi `resolveNextActor()` — chi tiết xem mục 7.2.
+11. Hệ thống khởi tạo workflow: Variant luôn = `I` (Internal — Người quản trị CSDL thuộc đơn vị chủ quản CSDL), set `current_step_code`, gọi `resolveNextActor()` — chi tiết xem mục 7.2.
 12. Hệ thống gửi email notification đến Lãnh đạo phòng quản trị CSDL.
-13. → Chuyển scope phê duyệt (Lãnh đạo phòng DBA duyệt).
+13. → Chuyển scope phê duyệt (Lãnh đạo phòng quản trị CSDL duyệt).
 
 > **Ghi chú:** Bước 14-18 mô tả tổng quan luồng ký nhận để developer hiểu context. Chi tiết xử lý phê duyệt + ký nhận sẽ được mô tả đầy đủ trong scope phê duyệt.
 
@@ -286,7 +151,7 @@ b) **Hủy phiếu:**
 18. → Kết thúc scope lập yêu cầu, chuyển scope phê duyệt lần 2.
 
 **Timeout ký nhận:** 3 ngày kể từ khi chuyển "Chờ ký nhận".
-- Hành động: Gửi email cho DBA, lãnh đạo phòng DBA, lãnh đạo phòng cán bộ cần ký.
+- Hành động: Gửi email cho người quản trị CSDL đã lập phiếu, lãnh đạo phòng quản trị CSDL, lãnh đạo phòng cán bộ cần ký.
 - KHÔNG hủy phiếu, giữ nguyên trạng thái "Chờ ký nhận".
 
 ### 6.2 Luồng 05B-HTKC (Người lập 05A lập)
@@ -323,7 +188,7 @@ b) **Hủy phiếu:**
 |---|---|---|---|---|
 | `DRAFT` | Nháp | Tất cả mẫu | ❌ Không | Phiếu đã lưu, chưa ký, chưa gửi |
 | `PENDING_SIGN` | Chờ ký xác nhận | 01-YCTC, 04A-YCTK | ❌ Không | Chưa sinh mã, chờ người dùng chung ký dòng chi tiết. Cột "Mã YC" hiển thị "—" |
-| `PENDING_RECEIPT` | Chờ ký nhận | 04B-BGTK | ✅ Có | Đã được lãnh đạo DBA duyệt, chờ người dùng ký nhận tài khoản |
+| `PENDING_RECEIPT` | Chờ ký nhận | 04B-BGTK | ✅ Có | Đã được lãnh đạo phòng quản trị CSDL duyệt, chờ người dùng ký nhận tài khoản |
 | `PENDING_CHECK` | Chờ kiểm tra | 02-YCCS, 03-YCCT | ✅ Có | Đã ký, gửi bộ phận kiểm tra. `current_step_code` = step đầu tiên (VD: `02_I_01` hoặc `02_E_01`) |
 | `PENDING_APPROVAL` | Chờ phê duyệt | 01, 04A, 04B, 05B | ✅ Có | Đã ký đầy đủ, chờ lãnh đạo phê duyệt. `current_step_code` = step đầu tiên |
 | `PENDING_ACCESS_TEAM` | Đã chuyển BP Mở truy cập | 05A-YCKC | ✅ Có | Gửi thẳng bộ phận mở truy cập. `current_step_code` = `05A_01` |
@@ -349,7 +214,7 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
    - Lấy `owner_unit_id` từ `information_system` (đơn vị chủ quản ứng dụng).
    - Nếu `requester_unit_id == owner_unit_id` → variant = `I` (Internal).
    - Nếu `requester_unit_id != owner_unit_id` → variant = `E` (External).
-   - **04B-BGTK:** Luôn variant = `I` (Internal). DBA thuộc đơn vị chủ quản CSDL.
+   - **04B-BGTK:** Luôn variant = `I` (Internal). Người lập 04B thuộc đơn vị chủ quản CSDL.
    - **03-YCCT, 05A-YCKC, 05B-HTKC:** Không có variant (chỉ 1 luồng duy nhất).
    - **01-YCTC:** Nếu phiếu có nhiều HT khác nhau (chung 1 đơn vị chủ quản), lấy `owner_unit_id` theo dòng chi tiết đầu tiên.
 
@@ -380,7 +245,7 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
 |---|---|---|---|
 | Nháp | Tất cả mẫu | Phiếu đã lưu, chưa ký, chưa gửi | → Chờ ký xác nhận / Chờ phê duyệt / Chờ kiểm tra / Đã chuyển BP Mở truy cập |
 | Chờ ký xác nhận | 01-YCTC, 04A-YCTK | Chưa sinh mã, chờ người dùng chung ký dòng chi tiết | → Chờ phê duyệt / Đã hủy (timeout hoặc người lập hủy) |
-| Chờ ký nhận | 04B-BGTK | Đã được lãnh đạo DBA duyệt, chờ người dùng ký nhận tài khoản | → Chờ phê duyệt (lần 2) |
+| Chờ ký nhận | 04B-BGTK | Đã được lãnh đạo phòng quản trị CSDL duyệt, chờ người dùng ký nhận tài khoản | → Chờ phê duyệt (lần 2) |
 | Chờ kiểm tra | 02-YCCS, 03-YCCT | Đã ký, gửi bộ phận kiểm tra | → Scope phê duyệt |
 | Chờ phê duyệt | 01, 04A, 04B, 05B | Đã ký đầy đủ, chờ lãnh đạo phê duyệt | → Scope phê duyệt |
 | Đã chuyển BP Mở truy cập | 05A-YCKC | Gửi thẳng bộ phận mở truy cập | → Scope phê duyệt |
@@ -403,12 +268,12 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
 | 8 | Mẫu 03 - Nội dung/Script | 1 file SQL Script chung cho toàn bộ phiếu (có thể bao gồm cả Tạo mới/Thay đổi/Xóa hoặc chỉ 1 phần). Nếu có file SQL Script + checksum khớp → nội dung chi tiết các tab KHÔNG bắt buộc. Nếu KHÔNG có file SQL Script → nội dung chi tiết của tất cả tab đã chọn PHẢI có dữ liệu: Tab Tạo mới và Tab Thay đổi chỉ cần ít nhất 1 mục con có dữ liệu; Tab Xóa phải có dữ liệu (chỉ có 1 trường "Nội dung lệnh xóa"). | 03-YCCT |
 | 9a | Timeout 01-YCTC (PENDING_SIGN) | Phiếu PENDING_SIGN hết thời gian ca đã chọn → Hệ thống tự động chuyển CANCELLED + email (xem Rule #16). | 01-YCTC |
 | 9b | Timeout 04A-YCTK (PENDING_SIGN) | Phiếu PENDING_SIGN hết ngày lập phiếu → Hệ thống tự động chuyển CANCELLED + email (xem Rule #16). | 04A-YCTK |
-| 9c | Timeout 04B ký nhận | 3 ngày kể từ khi chuyển "Chờ ký nhận" → Email cho DBA, lãnh đạo phòng DBA, lãnh đạo phòng cán bộ. KHÔNG hủy phiếu, giữ nguyên. | 04B-BGTK |
+| 9c | Timeout 04B ký nhận | 3 ngày kể từ khi chuyển "Chờ ký nhận" → Email cho người lập 04B, lãnh đạo phòng quản trị CSDL, lãnh đạo phòng cán bộ. KHÔNG hủy phiếu, giữ nguyên. | 04B-BGTK |
 | 10a | Trùng lặp 01-YCTC | Chặn khi trùng cả 4 nội dung: Hệ thống + CSDL + Đối tượng + Người dùng (trong cùng phiếu) | 01-YCTC |
 | 10b | Trùng lặp 04A-YCTK | Chặn trùng người dùng ở bảng chi tiết (trong cùng phiếu) | 04A-YCTK |
 | 11 | Thời gian tạo phiếu | Ngày + Ca: chỉ cho phép chọn (không cho nhập), chỉ hiện tại hoặc tương lai, không được chọn quá khứ (trừ 04B, 05B — phiếu bổ sung) | Tất cả (trừ 04B, 05B) |
 | 12 | Concurrency | Row-level locking + Polling 10 giây + Push ngay sau khi ký (không chờ polling cycle). Mỗi người thao tác dòng riêng, không conflict. Khi 1 người ký xong → push cập nhật ngay cho các người khác đang mở phiếu. Người lập có quyền xóa bất kỳ dòng nào (kể cả đã ký). | 01, 04A, 04B |
-| 13 | Kiểm tra quyền | Kiểm tra quyền người dùng trước khi cho phép chọn mẫu. VD: 04B chỉ hiển thị cho DBA. | Tất cả |
+| 13 | Kiểm tra quyền | Kiểm tra quyền người dùng trước khi cho phép chọn mẫu. VD: 04B chỉ hiển thị cho người quản trị CSDL. | Tất cả |
 | 14 | Mẫu 01 - Quyền truy cập | Loại "Truy vấn" → chỉ SELECT (auto-checked, không cho bỏ). Loại "Chỉnh sửa" → multi-select từ SELECT/INSERT/UPDATE/DELETE (chọn ≥1). Khi đổi loại → cảnh báo reset quyền đã chọn. | 01-YCTC |
 | 15 | Ký 1 lần cho tất cả dòng | 1 người có thể có nhiều dòng trên 1 phiếu (mỗi dòng 1 HT/CSDL khác nhau). Ký 1 lần → tất cả dòng của người đó tự động chuyển trạng thái "Đã ký". Không cho phép ký nhiều lần. | 01, 04A, 04B |
 | 16 | Timeout PENDING_SIGN | Phiếu ở trạng thái PENDING_SIGN hết thời gian ca đã chọn (01-YCTC) hoặc hết ngày lập phiếu (04A-YCTK) → Hệ thống tự động chuyển trạng thái `CANCELLED` + Gửi email notification đến người lập thông báo phiếu đã hết hạn. Scheduler kiểm tra mỗi 5 phút. | 01-YCTC, 04A-YCTK |
@@ -430,7 +295,7 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
 - Sau khi gửi phê duyệt không được sửa nội dung.
 - Mẫu 06-ĐKNS: không thuộc hệ thống.
 - Mẫu 07-NKCV: tự sinh sau khi hoàn thành, không thuộc scope lập yêu cầu.
-- Tất cả phần thuộc scope phê duyệt/thực hiện: hiển thị để trống, read-only trên form lập yêu cầu (bao gồm: ô ký phê duyệt, kết quả thực hiện, phần DBA ghi, phần thực hiện mở truy cập).
+- Tất cả phần thuộc scope phê duyệt/thực hiện: hiển thị để trống, read-only trên form lập yêu cầu (bao gồm: ô ký phê duyệt, kết quả thực hiện, phần Người quản trị CSDL ghi, phần thực hiện mở truy cập).
 - Email notification: gửi tự động khi chuyển trạng thái.
 
 ## 10. Quy tắc riêng mẫu 01-YCTC
@@ -445,7 +310,7 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
 - **Không cho sửa dòng đã ký:** Người lập phiếu **KHÔNG được chỉnh sửa** nội dung dòng dữ liệu đã ký số.
 - Quy tắc xóa/sửa tương tự áp dụng cho mẫu 04A-YCTK.
 - **Trường "Họ và tên" ở bảng chi tiết:**
-  + Người lập phiếu: dropdown chọn từ danh sách toàn bộ REQUESTER cùng phòng. Có thể thêm nhiều dòng cho nhiều người khác nhau.
+  + Người lập phiếu: dropdown chọn từ danh sách người dùng cùng phòng ban. Có thể thêm nhiều dòng cho nhiều người khác nhau.
   + Người dùng khác (vào phiếu đang "Chờ ký xác nhận"): chỉ được thêm dòng cho bản thân (tự fill tên từ AD, không cho chọn người khác).
 
 ## 11. Quy tắc riêng mẫu 03-YCCT
@@ -457,7 +322,7 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
   + Tab Tạo mới: chỉ cần ít nhất 1 mục con có dữ liệu (Table, Cấu trúc table, Index, Synonym, Tạo mới khác).
   + Tab Thay đổi: chỉ cần ít nhất 1 mục con có dữ liệu (Thêm cột, Sửa cột, Tạo lại index, Thay đổi khác).
   + Tab Xóa: trường "Nội dung lệnh xóa" phải có dữ liệu.
-- Có phần nội dung DBA ghi để đánh giá tác động ảnh hưởng và hệ thống liên quan (hiển thị để trống, read-only — thuộc scope phê duyệt).
+- Có phần nội dung Người quản trị CSDL ghi để đánh giá tác động ảnh hưởng và hệ thống liên quan (hiển thị để trống, read-only — thuộc scope phê duyệt).
 
 ## 12. Giao diện mẫu 01-YCTC
 
@@ -488,7 +353,7 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
 | CSDL | Dropdown | ✅ | Theo HT đã chọn |
 | Tên đối tượng | Nhập text | ✅ | Bảng/đối tượng dữ liệu |
 | Quyền truy cập | Multi-select Checkbox | ✅ | SELECT, INSERT, UPDATE, DELETE. Logic: Loại "Truy vấn" → chỉ SELECT (auto-checked); Loại "Chỉnh sửa" → chọn ≥1 |
-| Họ và tên | Dropdown/Tự động | ✅ | Người lập phiếu: dropdown chọn từ danh sách REQUESTER cùng phòng (có thể thêm nhiều dòng cho nhiều người). Người dùng khác (vào phiếu "Chờ ký xác nhận"): chỉ được thêm dòng cho bản thân (tự fill tên, không cho chọn người khác) |
+| Họ và tên | Dropdown/Tự động | ✅ | Người lập phiếu: dropdown chọn từ danh sách người dùng cùng phòng ban (có thể thêm nhiều dòng cho nhiều người). Người dùng khác (vào phiếu "Chờ ký xác nhận"): chỉ được thêm dòng cho bản thân (tự fill tên, không cho chọn người khác) |
 | Ký tên | Ký điện tử (OTP) | ✅ | 1 người có thể có nhiều dòng. Ký 1 lần → tất cả dòng của người đó tự động "Đã ký". Nếu người lập và người truy cập là một thì không cần ký tại mục chi tiết |
 
 ## 13. Giao diện mẫu 02-YCCS
@@ -537,7 +402,7 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
 | Đơn vị chủ quản quản trị CSDL | Nhập/Chọn | ✅ | |
 | Ký tên (người lập) | Ký điện tử (OTP) | ✅ | |
 | Danh sách Trưởng phòng/tương đương | Tự động | ✅ | |
-| Phần DBA ghi (Đánh giá tác động) | Hiển thị | — | Để trống, read-only (thuộc scope phê duyệt) |
+| Phần Người quản trị CSDL ghi (Đánh giá tác động) | Hiển thị | — | Để trống, read-only (thuộc scope phê duyệt) |
 | Ô ký phê duyệt | Hiển thị | — | Để trống, read-only |
 | Kết quả thực hiện | Hiển thị | — | Để trống, read-only (thuộc scope phê duyệt) |
 
@@ -605,7 +470,7 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
 
 | Trường | Loại | Bắt buộc | Ghi chú |
 |---|---|---|---|
-| Họ tên chủ tài khoản | Dropdown/Tự động | ✅ | Người lập: dropdown chọn REQUESTER cùng phòng. Người khác: tự fill tên bản thân |
+| Họ tên chủ tài khoản | Dropdown/Tự động | ✅ | Người lập: dropdown chọn người dùng cùng phòng ban. Người khác: tự fill tên bản thân |
 | Loại tài khoản | Dropdown | ✅ | Truy vấn / Chỉnh sửa — mỗi dòng tự chọn riêng |
 | Hình thức | Dropdown | ✅ | Cấp mới / Đổi thuộc tính — mỗi dòng tự chọn riêng |
 | Ký tên | Ký điện tử (OTP) | ✅ | 1 người có thể có nhiều dòng. Ký 1 lần → tất cả dòng tự "Đã ký". Nếu người lập và người truy cập là một thì không cần ký tại mục chi tiết |
@@ -614,7 +479,7 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
 
 ## 16. Giao diện mẫu 04B-BGTK
 
-**Điều kiện hiển thị:** Chỉ hiển thị đối với DBA. REQUESTER mặc định KHÔNG hiển thị 04B.
+**Điều kiện hiển thị:** Chỉ hiển thị đối với người quản trị CSDL. Người dùng khác thông thường KHÔNG hiển thị 04B.
 
 ### Màn hình chọn phiếu nợ
 
@@ -631,12 +496,12 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
 | Mã yêu cầu 04B | Tự động | ✅ | Sinh khi gửi. Format: [Mã 04A]_04B_V[xx]. VD: CNTT-NHDT_09072026_02_03_04B_V01 |
 | Mã yêu cầu 04A liên quan | Tự động | ✅ | Fill từ 04A, read-only |
 | Thời gian bàn giao | Tự động | ✅ | Ngày hiện tại, KHÔNG cho phép sửa |
-| Địa điểm | Nhập text | ✅ | DBA nhập |
+| Địa điểm | Nhập text | ✅ | Người lập phiếu nhập |
 | Đại diện BP quản trị CSDL (Cấp QL) | Tự động | ✅ | Lấy từ cấu hình |
-| Người bàn giao (DBA) | Tự động | ✅ | User đăng nhập |
+| Người bàn giao (Người quản trị CSDL) | Tự động | ✅ | User đăng nhập |
 | Đại diện BP nhận bàn giao (Cấp QL) | Tự động | ✅ | Lãnh đạo phòng người yêu cầu (từ 04A) |
 | Người nhận bàn giao | Tự động | ✅ | Danh sách người dùng từ 04A (chỉ những người có Hình thức = "Cấp mới") |
-| Ký tên DBA (Người bàn giao) | Ký điện tử (OTP) | ✅ | DBA ký |
+| Ký tên (Người bàn giao) | Ký điện tử (OTP) | ✅ | Người quản trị CSDL ký |
 | Ô ký phê duyệt | Hiển thị | — | Để trống, read-only |
 
 ### Chi tiết bàn giao (bảng)
@@ -645,12 +510,12 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
 
 | Trường | Loại | Bắt buộc | Ghi chú |
 |---|---|---|---|
-| Tài khoản (UserID) | Nhập text | ✅ | DBA nhập tay — KHÔNG tự fill |
+| Tài khoản (UserID) | Nhập text | ✅ | Người lập phiếu nhập tay — KHÔNG tự fill |
 | Loại tài khoản (QUERY/UPDATE) | Tự động | ✅ | Fill từ 04A |
-| Phạm vi | Nhập text | ✅ | DBA tự nhập (KHÔNG fill từ 04A) |
+| Phạm vi | Nhập text | ✅ | Người lập phiếu tự nhập (KHÔNG fill từ 04A) |
 | Nội dung | Tự động | ✅ | Fill từ trường "Hình thức" của 04A (= "Cấp mới") |
 | Chủ tài khoản | Tự động | ✅ | Fill từ 04A |
-| Ký nhận (Người dùng) | Ký điện tử (OTP) | ✅ | Mỗi người ký dòng mình (sau khi lãnh đạo DBA duyệt, trạng thái "Chờ ký nhận") |
+| Ký nhận (Người dùng) | Ký điện tử (OTP) | ✅ | Mỗi người ký dòng mình (sau khi lãnh đạo phòng quản trị CSDL duyệt, trạng thái "Chờ ký nhận") |
 
 ## 17. Giao diện mẫu 05A-YCKC
 
@@ -706,7 +571,7 @@ Khi người lập ấn "Gửi phê duyệt" / "Gửi kiểm tra" / "Gửi BP M�
 
 ### 19.1 Mô tả chức năng
 
-Cho phép người dùng có quyền lập yêu cầu (REQUESTER) đăng ký trước thông tin chi tiết truy cập CSDL cho ngày + ca hiện tại hoặc tương lai. Khi người lập phiếu 01-YCTC chọn ca, hệ thống tự động nạp toàn bộ đăng ký trước phù hợp của tất cả người dùng cùng đơn vị vào bảng chi tiết phiếu.
+Cho phép người dùng có quyền lập yêu cầu đăng ký trước thông tin chi tiết truy cập CSDL cho ngày + ca hiện tại hoặc tương lai. Khi người lập phiếu 01-YCTC chọn ca, hệ thống tự động nạp toàn bộ đăng ký trước phù hợp của tất cả người dùng cùng đơn vị vào bảng chi tiết phiếu.
 
 **Lợi ích:**
 - Tiết kiệm thời gian lập phiếu.
@@ -724,7 +589,7 @@ Cho phép người dùng có quyền lập yêu cầu (REQUESTER) đăng ký tr�
 
 ### 19.3 Quyền truy cập
 
-- Bất kỳ người dùng nào có role REQUESTER đều có chức năng này.
+- Bất kỳ người dùng nào có quyền lập yêu cầu đều có chức năng này.
 
 ### 19.4 Giao diện trang "Đăng ký trước Yêu cầu chi tiết"
 
@@ -923,7 +788,7 @@ Hiển thị danh sách các đăng ký đã lưu **của chính người dùng 
 - [ ] File SQL 02-YCCS kiểm tra đúng định dạng tên (YYYYMMDD_BS_XXX.sql).
 - [ ] File SQL 03-YCCT kiểm tra đúng định dạng tên (YYYYMMDD_BS_XXX.sql).
 - [ ] Upload file SQL: chỉ cho phép 1 file duy nhất (cả 02 và 03).
-- [ ] Lập 04B-BGTK từ 04A đã hoàn thành: chỉ nạp dòng "Cấp mới", kiểm tra auto-fill đúng (Nội dung = "Cấp mới", Phạm vi = DBA nhập).
+- [ ] Lập 04B-BGTK từ 04A đã hoàn thành: chỉ nạp dòng "Cấp mới", kiểm tra auto-fill đúng (Nội dung = "Cấp mới", Phạm vi = Người lập phiếu nhập).
 - [ ] 04B không hiển thị dòng "Đổi thuộc tính" từ 04A.
 - [ ] Lập 05B-HTKC, kiểm tra gộp tự động các 05A chung HT+CSDL+Ngày+Ca.
 - [ ] Mã 05B sinh riêng, hiển thị "Lần" tổng hợp từ 05A liên quan.
@@ -933,7 +798,7 @@ Hiển thị danh sách các đăng ký đã lưu **của chính người dùng 
 - [ ] Trùng lặp 01 (4 trường): chặn đúng.
 - [ ] Trùng lặp 04A (người dùng): chặn đúng.
 - [ ] Concurrency: nhiều người ký đồng thời trên 01/04A/04B → không conflict. Polling 10 giây + push sau ký.
-- [ ] Kiểm tra quyền: 04B chỉ hiển thị cho DBA, REQUESTER không thấy 04B.
+- [ ] Kiểm tra quyền: 04B chỉ hiển thị cho người quản trị CSDL, người dùng khác không thấy 04B.
 - [ ] Chặn chọn ngày + ca quá khứ (trừ 04B, 05B). Chỉ cho chọn, không cho nhập.
 - [ ] Mẫu 01: logic Truy vấn → chỉ SELECT; Chỉnh sửa → multi-select.
 - [ ] Đổi loại yêu cầu 01 → cảnh báo reset → confirm → reset đúng.
@@ -967,7 +832,7 @@ Hiển thị danh sách các đăng ký đã lưu **của chính người dùng 
 - [ ] Mã yêu cầu format đúng: KýhiệuĐV_ddmmyyyy_Ca_Lần. Unique toàn hệ thống.
 - [ ] Trường "Lần" tự tăng theo Ngày + Ca toàn hệ thống.
 - [ ] Mẫu 05A: trường "Ngày lập yêu cầu" auto fill ngày hiện tại, cho pick ngày hiện tại/tương lai, không cho nhập tay.
-- [ ] Trường "Họ và tên" mẫu 01: người lập = dropdown REQUESTER cùng phòng; người khác = tự fill bản thân.
+- [ ] Trường "Họ và tên" mẫu 01: người lập = dropdown người dùng cùng phòng ban; người khác = tự fill bản thân.
 - [ ] Khi gửi phê duyệt phiếu 01/04A: dòng chưa ký (người dùng khác người lập) tự động bị xóa.
 
 ## 23. Definition of Done
@@ -1036,7 +901,7 @@ Hiển thị danh sách các đăng ký đã lưu **của chính người dùng 
 | Ca | Ca truy cập (01, 02, 03) — format 2 chữ số zero-padded |
 | Lần | Lần phát sinh trong ca — format 2 chữ số zero-padded |
 | PENDING_SIGN | Trạng thái chờ ký xác nhận chung (chưa sinh mã) |
-| DBA | Người quản trị CSDL — người lập phiếu 04B |
+| Người quản trị CSDL | Người quản trị cơ sở dữ liệu — người lập phiếu 04B |
 
 ---
 
@@ -1048,7 +913,7 @@ Hiển thị danh sách các đăng ký đã lưu **của chính người dùng 
 | 02-YCCS | Có (I/E) | Xác định dựa trên ĐV chủ quản của HT đã chọn |
 | 03-YCCT | Không | Chỉ 1 luồng duy nhất |
 | 04A-YCTK | Có (I/E) | Xác định dựa trên ĐV chủ quản của HT đã chọn |
-| 04B-BGTK | Luôn I | DBA thuộc đơn vị chủ quản CSDL |
+| 04B-BGTK | Luôn I | Người quản trị CSDL thuộc đơn vị chủ quản CSDL |
 | 05A-YCKC | Không | Chỉ 1 luồng duy nhất |
 | 05B-HTKC | Không | Phiếu bổ sung, chỉ 1 luồng duy nhất |
 
@@ -1063,8 +928,8 @@ Hiển thị danh sách các đăng ký đã lưu **của chính người dùng 
 | 3 | Breadcrumb | Navigation | Trang chủ > Lập yêu cầu |
 
 **Quy tắc hiển thị:**
-- REQUESTER: hiển thị 01, 02, 03, 04A, 05A, 05B (ẩn 04B).
-- DBA: hiển thị 04B (ẩn các mẫu còn lại).
+- Người lập yêu cầu thông thường: hiển thị 01, 02, 03, 04A, 05A, 05B (ẩn 04B).
+- Người quản trị CSDL: hiển thị 04B (ẩn các mẫu còn lại).
 - Card 01-YCTC chứa thêm button phụ "Đăng ký trước chi tiết".
 
 ---
@@ -1084,36 +949,6 @@ Hiển thị danh sách các đăng ký đã lưu **của chính người dùng 
 - Chữ ký sử dụng: chữ ký của người lập tại thời điểm gửi phê duyệt.
 - Không yêu cầu người lập ký riêng cho dòng của mình.
 - Logic này áp dụng cho cả Nhánh A (lưu chờ ký) và Nhánh B (gửi trực tiếp).
-
----
-
-## 31. Bảng CSDL mapping (04B, 05B)
-
-### 31.1 Bảng `request_04b_04a_mapping`
-
-| Cột | Kiểu | Mô tả |
-|---|---|---|
-| id | BIGINT PK | Auto-increment |
-| request_04b_code | VARCHAR | Mã 04B (format: [Mã 04A]_04B_V[xx]) |
-| request_04a_id | BIGINT FK | Tham chiếu đến phiếu 04A |
-| version | INT | Số thứ tự version (01, 02, ...) |
-| status | ENUM | ACTIVE / CANCELLED |
-| created_at | DATETIME | Ngày tạo |
-| created_by | VARCHAR | Người tạo (DBA) |
-
-### 31.2 Bảng `request_05b_05a_mapping`
-
-| Cột | Kiểu | Mô tả |
-|---|---|---|
-| id | BIGINT PK | Auto-increment |
-| request_05b_code | VARCHAR | Mã 05B |
-| request_05a_id | BIGINT FK | Tham chiếu đến phiếu 05A |
-| version | INT | Số thứ tự version |
-| status | ENUM | ACTIVE / CANCELLED |
-| created_at | DATETIME | Ngày tạo |
-| created_by | VARCHAR | Người tạo |
-
-**Quan hệ:** 1 phiếu 05B → nhiều phiếu 05A (1-N).
 
 ---
 
@@ -1139,221 +974,3 @@ Hiển thị danh sách các đăng ký đã lưu **của chính người dùng 
 8. Mã yêu cầu trùng lặp khi nhiều người gửi phê duyệt cùng lúc — cần DB sequence hoặc distributed lock.
 9. Concurrency: Nhiều người cùng ký 1 phiếu PENDING_SIGN — cần optimistic/pessimistic locking trên dòng chi tiết.
 10. Email notification thất bại — cần retry tự động 3 lần, mỗi lần cách nhau 5 giây.
-
----
-
-## 32. Schema CSDL chính — Module Lập yêu cầu
-
-> Mô tả cấu trúc các bảng chính phục vụ chức năng lập và gửi yêu cầu. Các bảng danh mục (information_system, database_catalog, unit...) được giả định đã tồn tại trong module khác.
-
-### 32.1 Bảng `request` (Phiếu yêu cầu — bảng chính)
-
-| Cột | Kiểu | Null? | Mô tả |
-|---|---|---|---|
-| id | BIGINT PK | — | Auto-increment |
-| request_code | VARCHAR(50) | NULL | Mã yêu cầu (sinh khi gửi phê duyệt). NULL khi DRAFT/PENDING_SIGN |
-| form_type | VARCHAR(10) | NOT NULL | Loại mẫu: `01`, `02`, `03`, `04A`, `04B`, `05A`, `05B` |
-| status | VARCHAR(30) | NOT NULL | Trạng thái: DRAFT, PENDING_SIGN, PENDING_CHECK, PENDING_APPROVAL, PENDING_ACCESS_TEAM, PENDING_RECEIPT, REJECTED, APPROVED, IN_PROGRESS, CANCELLED, COMPLETED |
-| variant | VARCHAR(1) | NULL | `I` / `E` / NULL (mẫu không có variant) |
-| requester_id | VARCHAR(50) | NOT NULL | Mã người lập (từ AD) |
-| requester_name | VARCHAR(100) | NOT NULL | Họ tên người lập |
-| unit_code | VARCHAR(20) | NOT NULL | Mã đơn vị yêu cầu |
-| unit_name | VARCHAR(100) | NOT NULL | Tên đơn vị yêu cầu |
-| department_code | VARCHAR(20) | NOT NULL | Mã phòng ban |
-| department_name | VARCHAR(100) | NOT NULL | Tên phòng ban |
-| phone | VARCHAR(20) | NULL | ĐTDĐ |
-| request_date | DATE | NOT NULL | Ngày lập yêu cầu (ngày tạo phiếu) |
-| submit_date | DATE | NULL | Ngày gửi phê duyệt (ngày sinh mã). NULL khi chưa gửi |
-| shift | VARCHAR(2) | NOT NULL | Ca: 01, 02, 03 |
-| time_from | DATETIME | NULL | Thời gian bắt đầu (fill theo ca) |
-| time_to | DATETIME | NULL | Thời gian kết thúc (fill theo ca) |
-| system_id | BIGINT FK | NULL | HT chọn (NULL cho mẫu 01 — HT nằm ở detail) |
-| system_name | VARCHAR(100) | NULL | Tên HT (denormalize) |
-| database_id | BIGINT FK | NULL | CSDL chọn (NULL cho mẫu 01 — CSDL nằm ở detail) |
-| database_name | VARCHAR(100) | NULL | Tên CSDL (denormalize) |
-| owner_unit_id | VARCHAR(20) | NULL | ĐV chủ quản ứng dụng |
-| owner_db_unit_id | VARCHAR(20) | NULL | ĐV chủ quản CSDL (chỉ 03, 04A) |
-| request_type | VARCHAR(20) | NULL | Loại yêu cầu — Mẫu 01: Truy vấn/Chỉnh sửa; Mẫu 04A: Cấp mới/Đổi thuộc tính |
-| reason | TEXT | NULL | Mục đích / Lý do yêu cầu |
-| content | TEXT | NULL | Nội dung chi tiết (02, 03) |
-| signature | TEXT | NULL | Chữ ký điện tử người lập |
-| signed_at | DATETIME | NULL | Thời điểm ký |
-| current_step_code | VARCHAR(20) | NULL | Step hiện tại trong workflow (VD: 01_I_01) |
-| current_actor_id | VARCHAR(50) | NULL | Người xử lý hiện tại |
-| current_actor_role | VARCHAR(20) | NULL | Role người xử lý hiện tại |
-| at_requester_phase | BOOLEAN | NULL | Đang ở phase đơn vị yêu cầu? (Variant E) |
-| reject_reason | TEXT | NULL | Lý do từ chối (khi REJECTED) |
-| cancelled_reason | VARCHAR(50) | NULL | Lý do hủy: USER_CANCEL / TIMEOUT |
-| version | INT | NOT NULL | Optimistic locking version |
-| created_at | DATETIME | NOT NULL | Thời điểm tạo |
-| updated_at | DATETIME | NOT NULL | Thời điểm cập nhật cuối |
-
-**Index:**
-- `idx_request_code` UNIQUE ON (request_code) WHERE request_code IS NOT NULL
-- `idx_request_status_dept` ON (status, department_code) — phục vụ danh sách phiếu chờ ký
-- `idx_request_requester` ON (requester_id, status) — phục vụ danh sách phiếu của người lập
-- `idx_request_submit_date_shift` ON (submit_date, shift) — phục vụ sinh sequence "Lần"
-
-### 32.2 Bảng `request_detail` (Dòng chi tiết — Mẫu 01, 04A)
-
-| Cột | Kiểu | Null? | Mô tả |
-|---|---|---|---|
-| id | BIGINT PK | — | Auto-increment |
-| request_id | BIGINT FK | NOT NULL | Tham chiếu bảng `request` |
-| row_order | INT | NOT NULL | Số thứ tự dòng |
-| system_id | BIGINT FK | NOT NULL | Hệ thống |
-| system_name | VARCHAR(100) | NOT NULL | Tên HT (denormalize) |
-| database_id | BIGINT FK | NOT NULL | CSDL |
-| database_name | VARCHAR(100) | NOT NULL | Tên CSDL (denormalize) |
-| object_name | VARCHAR(200) | NULL | Bảng/Đối tượng (Mẫu 01) |
-| access_rights | VARCHAR(50) | NULL | Quyền truy cập: SELECT,INSERT,UPDATE,DELETE (Mẫu 01) |
-| account_type | VARCHAR(20) | NULL | Loại tài khoản: QUERY/UPDATE (Mẫu 04A) |
-| account_action | VARCHAR(20) | NULL | Hình thức: Cấp mới/Đổi thuộc tính (Mẫu 04A) |
-| user_id | VARCHAR(50) | NOT NULL | Mã người truy cập/chủ tài khoản |
-| user_name | VARCHAR(100) | NOT NULL | Họ tên người truy cập/chủ tài khoản |
-| sign_status | VARCHAR(20) | NOT NULL | Trạng thái ký: PENDING / SIGNED / AUTO_SIGNED |
-| signature | TEXT | NULL | Chữ ký điện tử |
-| signed_at | DATETIME | NULL | Thời điểm ký |
-| source | VARCHAR(20) | NOT NULL | Nguồn: MANUAL / PRE_REGISTER (nạp từ đăng ký trước) |
-| pre_registration_id | BIGINT FK | NULL | Tham chiếu pre_registration_request (nếu source = PRE_REGISTER) |
-| version | INT | NOT NULL | Optimistic locking version (row-level) |
-| created_at | DATETIME | NOT NULL | Thời điểm tạo |
-| updated_at | DATETIME | NOT NULL | Thời điểm cập nhật |
-
-**Index:**
-- `idx_detail_request` ON (request_id, row_order)
-- `idx_detail_user` ON (request_id, user_id) — phục vụ validate trùng lặp
-- `uk_detail_01_unique` UNIQUE ON (request_id, system_id, database_id, object_name, user_id) WHERE form_type = '01' — Rule #10a
-
-### 32.3 Bảng `request_04b_detail` (Chi tiết bàn giao — Mẫu 04B)
-
-| Cột | Kiểu | Null? | Mô tả |
-|---|---|---|---|
-| id | BIGINT PK | — | Auto-increment |
-| request_id | BIGINT FK | NOT NULL | Tham chiếu bảng `request` (phiếu 04B) |
-| row_order | INT | NOT NULL | Số thứ tự dòng |
-| account_user_id | VARCHAR(50) | NOT NULL | Tài khoản được cấp (UserID) — DBA nhập |
-| account_type | VARCHAR(20) | NOT NULL | Loại tài khoản (QUERY/UPDATE) — fill từ 04A |
-| scope | VARCHAR(500) | NOT NULL | Phạm vi — DBA nhập |
-| content | VARCHAR(100) | NOT NULL | Nội dung (= "Cấp mới") — fill từ 04A |
-| owner_name | VARCHAR(100) | NOT NULL | Chủ tài khoản — fill từ 04A |
-| receipt_status | VARCHAR(20) | NOT NULL | Trạng thái ký nhận: PENDING / SIGNED |
-| receipt_signature | TEXT | NULL | Chữ ký ký nhận |
-| receipt_signed_at | DATETIME | NULL | Thời điểm ký nhận |
-| version | INT | NOT NULL | Optimistic locking |
-| created_at | DATETIME | NOT NULL | Thời điểm tạo |
-
-**Index:**
-- `idx_04b_detail_request` ON (request_id)
-
-### 32.4 Bảng `request_sql_file` (File SQL đính kèm — Mẫu 02, 03)
-
-| Cột | Kiểu | Null? | Mô tả |
-|---|---|---|---|
-| id | BIGINT PK | — | Auto-increment |
-| request_id | BIGINT FK | NOT NULL | Tham chiếu bảng `request` |
-| file_name | VARCHAR(200) | NOT NULL | Tên file (format: YYYYMMDD_BS_XXX.sql) |
-| file_path | VARCHAR(500) | NOT NULL | Đường dẫn lưu trữ |
-| file_size | BIGINT | NOT NULL | Dung lượng (bytes) |
-| checksum_type | VARCHAR(10) | NOT NULL | MD5 / SHA-256 |
-| checksum_system | VARCHAR(64) | NOT NULL | Hash do hệ thống tính |
-| checksum_user | VARCHAR(64) | NOT NULL | Hash do người dùng nhập |
-| checksum_match | BOOLEAN | NOT NULL | TRUE nếu khớp |
-| uploaded_at | DATETIME | NOT NULL | Thời điểm upload |
-
-**Index:**
-- `idx_sql_file_request` ON (request_id)
-
-### 32.5 Bảng `request_03_structure` (Nội dung cấu trúc — Mẫu 03)
-
-| Cột | Kiểu | Null? | Mô tả |
-|---|---|---|---|
-| id | BIGINT PK | — | Auto-increment |
-| request_id | BIGINT FK | NOT NULL | Tham chiếu bảng `request` |
-| category | VARCHAR(20) | NOT NULL | Tab: CREATE / ALTER / DROP |
-| sub_category | VARCHAR(30) | NOT NULL | Mục con: TABLE, STRUCTURE, INDEX, SYNONYM, OTHER (Create); ADD_COL, MODIFY_COL, REBUILD_INDEX, OTHER (Alter); DROP_CONTENT (Drop) |
-| content | TEXT | NOT NULL | Nội dung chi tiết (JSON hoặc text tùy mục) |
-| row_order | INT | NOT NULL | Thứ tự hiển thị |
-| created_at | DATETIME | NOT NULL | Thời điểm tạo |
-| updated_at | DATETIME | NOT NULL | Thời điểm cập nhật |
-
-**Index:**
-- `idx_03_structure_request` ON (request_id, category)
-
-### 32.6 Bảng `request_sequence` (Sequence sinh mã "Lần")
-
-| Cột | Kiểu | Null? | Mô tả |
-|---|---|---|---|
-| id | BIGINT PK | — | Auto-increment |
-| seq_date | DATE | NOT NULL | Ngày (ddmmyyyy) |
-| seq_shift | VARCHAR(2) | NOT NULL | Ca (01, 02, 03) |
-| last_value | INT | NOT NULL | Giá trị cuối cùng của "Lần" trong ngày + ca |
-| updated_at | DATETIME | NOT NULL | Thời điểm cập nhật |
-
-**Constraint:**
-- `uk_sequence_date_shift` UNIQUE ON (seq_date, seq_shift)
-
-**Logic sinh mã:**
-1. SELECT FOR UPDATE trên dòng (seq_date, seq_shift).
-2. Nếu chưa tồn tại → INSERT với last_value = 1.
-3. Nếu đã tồn tại → UPDATE last_value = last_value + 1.
-4. Format "Lần" = zero-padded 2 chữ số (mở rộng 3 chữ số nếu > 99).
-
-### 32.7 Bảng `workflow_history` (Lịch sử workflow)
-
-| Cột | Kiểu | Null? | Mô tả |
-|---|---|---|---|
-| id | BIGINT PK | — | Auto-increment |
-| request_id | BIGINT FK | NOT NULL | Tham chiếu bảng `request` |
-| action | VARCHAR(30) | NOT NULL | SUBMIT, APPROVE, REJECT, FORWARD, CANCEL... |
-| step_code | VARCHAR(20) | NOT NULL | Step tại thời điểm action (VD: 01_I_01) |
-| actor_id | VARCHAR(50) | NOT NULL | Người thực hiện action |
-| actor_role | VARCHAR(20) | NOT NULL | Role người thực hiện |
-| actor_unit_id | VARCHAR(20) | NULL | Đơn vị người thực hiện |
-| comment | TEXT | NULL | Ghi chú / Lý do từ chối |
-| created_at | DATETIME | NOT NULL | Thời điểm action |
-
-**Index:**
-- `idx_wf_history_request` ON (request_id, created_at)
-
-### 32.8 Bảng `email_notification_log` (Log gửi email)
-
-| Cột | Kiểu | Null? | Mô tả |
-|---|---|---|---|
-| id | BIGINT PK | — | Auto-increment |
-| request_id | BIGINT FK | NOT NULL | Phiếu liên quan |
-| template_code | VARCHAR(30) | NOT NULL | Mã template (SUBMIT, REJECT, PENDING_SIGN, TIMEOUT, REMIND_05B, TIMEOUT_04B) |
-| recipient_email | VARCHAR(200) | NOT NULL | Email người nhận |
-| recipient_name | VARCHAR(100) | NOT NULL | Tên người nhận |
-| subject | VARCHAR(300) | NOT NULL | Subject email |
-| status | VARCHAR(20) | NOT NULL | SENT / FAILED / RETRYING |
-| retry_count | INT | NOT NULL | Số lần retry (max 3) |
-| sent_at | DATETIME | NULL | Thời điểm gửi thành công |
-| error_message | TEXT | NULL | Lỗi nếu FAILED |
-| created_at | DATETIME | NOT NULL | Thời điểm tạo |
-
-**Index:**
-- `idx_email_log_request` ON (request_id)
-- `idx_email_log_status` ON (status) WHERE status = 'RETRYING' — phục vụ job retry
-
-### 32.9 Quan hệ giữa các bảng (ERD tóm tắt)
-
-```
-request (1) ──── (N) request_detail          [Mẫu 01, 04A]
-request (1) ──── (N) request_04b_detail      [Mẫu 04B]
-request (1) ──── (1) request_sql_file        [Mẫu 02, 03]
-request (1) ──── (N) request_03_structure    [Mẫu 03]
-request (1) ──── (N) workflow_history
-request (1) ──── (N) email_notification_log
-request (1) ──── (N) request_04b_04a_mapping [04B → 04A]
-request (1) ──── (N) request_05b_05a_mapping [05B → 05A]
-request_detail (N) ── (1) pre_registration_request [source = PRE_REGISTER]
-```
-
-**Ghi chú thiết kế:**
-- Bảng `request` là bảng chung cho tất cả 7 loại mẫu. Phân biệt qua `form_type`.
-- Các trường không áp dụng cho mẫu cụ thể sẽ = NULL.
-- `request_detail` dùng cho mẫu 01 (nhiều HT/CSDL/người) và 04A (nhiều người/tài khoản).
-- `request_04b_detail` riêng cho 04B vì có logic ký nhận khác biệt.
-- Denormalize tên HT/CSDL/người vào bảng chi tiết để tránh JOIN khi hiển thị.
-- Optimistic locking (`version`) trên `request` và `request_detail` để xử lý concurrency.
