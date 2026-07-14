@@ -125,8 +125,8 @@ Bảng header của phiếu yêu cầu.
 | Cột | Mô tả |
 |---|---|
 | id | Khóa chính |
-| request_code | Mã yêu cầu. 01-YCTC: `MãĐơnVị_MãPhòng_yyyyMMddHHmmss`; mẫu có chọn hệ thống (02/05A/05B): `KýhiệuHệThống_yyyyMMddHHmmss` |
-| request_type | Loại phiếu: 01/02/03/04A/04B/05A/05B |
+| request_code | Mã yêu cầu. Format thống nhất cho mọi mẫu: `KýhiệuĐV_DDMMYYYY_Ca_Lần` (UNIQUE). Xem `features/request-create.md` mục 6.1 |
+| request_type | Loại phiếu: 01/02/03/04A/05A/05B |
 | status | Trạng thái hiện tại |
 | requester_user_id | Người lập |
 | requester_unit_id | Đơn vị yêu cầu |
@@ -139,10 +139,6 @@ Bảng header của phiếu yêu cầu.
 | end_time | Thời gian kết thúc |
 | expected_execution_date | Ngày thực hiện dự kiến, dùng cho 03-YCCT |
 | reason | Lý do/mục đích |
-| receiver_user_id | 04B-BGTK: người nhận bàn giao tài khoản |
-| handover_manager_id | 04B-BGTK: lãnh đạo phòng phụ trách người bàn giao |
-| receiver_manager_id | 04B-BGTK: lãnh đạo phòng phụ trách người nhận bàn giao |
-| source_request_id | 04B-BGTK: phiếu 04A-YCTK được liên kết bàn giao |
 | current_actor_type | USER/ROLE/UNIT/TEAM |
 | current_actor_id | Người/bộ phận đang xử lý |
 | current_actor_role | Vai trò đang xử lý (tham chiếu nhanh khi actor là ROLE/TEAM) |
@@ -174,7 +170,6 @@ Dòng chi tiết dùng cho các mẫu có danh sách chi tiết như 01-YCTC, 04
 | account_owner_name | Chủ tài khoản, dùng cho 04A |
 | account_type | Truy cập/Chỉnh sửa |
 | account_action | Cấp mới/Đổi thuộc tính |
-| scope | 04B-BGTK: phạm vi bàn giao (Toàn bộ/Theo hệ thống/Theo CSDL/Theo đối tượng) |
 | access_rights | Quyền truy cập dạng mã hoặc JSON |
 | query_all | Có chọn QueryAll không |
 | purpose | Mục đích/lý do dòng chi tiết |
@@ -218,39 +213,67 @@ Liên kết phiếu 05B-HTKC với phiếu 05A-YCKC.
 | completion_request_id | Phiếu 05B |
 | created_at | Thời gian liên kết |
 
-### `pre_registration_request`
+### `handover_record`
 
-Bảng đăng ký trước yêu cầu chi tiết (màn hình 01YCTC_Dangky). Thay thế bảng `access_registration` cũ với schema đầy đủ hỗ trợ lifecycle quản lý trạng thái, ký OTP, và liên kết tự động vào phiếu 01-YCTC.
+Bảng biên bản bàn giao tài khoản (04B-BGTK). Tách riêng khỏi `access_request`. Dùng chung mã phiếu 04A liên kết, không sinh mã riêng.
 
 | Cột | Mô tả |
 |---|---|
-| id | Khóa chính (IDENTITY) |
-| user_id | Người đăng ký (FK → app_user.id) |
-| unit_code | Mã đơn vị — dùng để lọc theo đơn vị khi nạp vào phiếu |
-| register_date | Ngày đăng ký truy cập (DATE) |
-| shift | Ca làm việc (1/2/3) |
-| request_type | Loại yêu cầu: "Truy vấn" / "Chỉnh sửa" |
+| id | Khóa chính |
+| source_request_id | FK → access_request.id (phiếu 04A, COMPLETED) |
+| status | DRAFT / PENDING_APPROVAL / PENDING_RECEIPT / RETURNED / CANCELLED / COMPLETED |
+| creator_user_id | Người quản trị CSDL lập (app_user.id) |
+| handover_date | Ngày bàn giao |
+| handover_location | Địa điểm bàn giao |
+| handover_manager_id | Lãnh đạo phòng bên bàn giao (phòng DBA) |
+| receiver_manager_id | Lãnh đạo phòng bên nhận bàn giao |
+| current_step_code | Step workflow hiện tại (04B_01, 04B_02, 04B_03) |
+| current_actor_id | Người xử lý hiện tại |
+| current_actor_role | Role xử lý hiện tại |
+| signed_at | Thời điểm người lập ký |
+| created_at | Thời điểm tạo |
+| updated_at | Thời điểm cập nhật |
+
+Quan hệ: 1 phiếu 04A → 0..N handover_record (mỗi lần lập mới sau RETURNED là bản ghi mới, chỉ 1 bản ACTIVE/đang xử lý tại mỗi thời điểm).
+
+### `handover_record_detail`
+
+Chi tiết bàn giao tài khoản — dòng chi tiết cho mỗi chủ tài khoản.
+
+| Cột | Mô tả |
+|---|---|
+| id | Khóa chính |
+| handover_id | FK → handover_record.id |
+| account_user_id | Tài khoản được cấp (UserID) — người lập nhập |
+| account_type | Loại tài khoản (QUERY/UPDATE) — fill từ 04A |
+| scope | Phạm vi — người lập nhập |
+| content | Nội dung (= "Cấp mới") — fill từ 04A |
+| owner_name | Chủ tài khoản — fill từ 04A |
+| owner_user_id | FK → app_user.id (chủ tài khoản) |
+| receipt_status | PENDING / SIGNED |
+| receipt_signed_at | Thời điểm ký nhận |
+
+### `access_registration`
+
+Bảng dữ liệu đăng ký chi tiết từ màn hình 01YCTC_Dangky. Nút "Lấy dữ liệu đã đăng ký" trên màn lập yêu cầu 01-YCTC quét/nạp lại các bản ghi này thành dòng chi tiết.
+
+| Cột | Mô tả |
+|---|---|
+| id | Khóa chính |
+| requester_user_id | Người đăng ký (app_user.id) |
 | system_id | Hệ thống thông tin |
 | database_id | CSDL |
 | object_name | Tên đối tượng (mặc định "All Schema") |
 | access_rights | CSV mã quyền, ví dụ `SELECT,INSERT,UPDATE,DELETE` |
-| signed_at | Thời điểm ký OTP xác nhận |
-| signature_image_id | Ảnh chữ ký (FK → signature_image.id) |
+| request_type | Loại yêu cầu: Truy vấn / Chỉnh sửa |
+| shift_no | Ca (1/2/3) |
+| from_date | Từ ngày |
+| to_date | Đến ngày |
 | status | Trạng thái: UNUSED / PENDING_APPROVAL / USED / EXPIRED |
-| request_id | FK nullable → access_request.id (phiếu 01-YCTC liên kết) |
-| created_at | Thời điểm tạo |
-| updated_at | Thời điểm cập nhật |
-| version | Optimistic locking version |
-
-**Indexes:**
-- `ix_prereg_user_status` ON (user_id, status)
-- `ix_prereg_unit_date_shift` ON (unit_code, register_date, shift, status)
-
-**Lifecycle trạng thái:**
-- `UNUSED` → đăng ký xong, chờ nạp vào phiếu
-- `PENDING_APPROVAL` → đã nạp vào phiếu 01-YCTC, đang chờ duyệt
-- `USED` → phiếu 01-YCTC đã hoàn thành cấp quyền
-- `EXPIRED` → hết hạn (ngày+ca đã qua mà chưa được sử dụng)
+| request_id | FK phiếu 01 đã nạp (nullable, set khi nạp vào phiếu) |
+| signed | Đã ký OTP tại mục chi tiết hay chưa |
+| signed_at | Thời điểm ký OTP |
+| created_at | Thời điểm đăng ký |
 
 ## 3. Workflow và ký xác nhận
 

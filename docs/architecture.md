@@ -62,6 +62,7 @@ Application Database
 | Trạng thái | Ý nghĩa |
 |---|---|
 | DRAFT | Lưu nháp, chưa gửi |
+| PENDING_SIGN | Chờ ký xác nhận chung (01-YCTC, 04A-YCTK). Chưa sinh mã yêu cầu |
 | PENDING_CHECK | Chờ bộ phận kiểm tra |
 | PENDING_DEPT_APPROVAL | Chờ Trưởng phòng/tương đương |
 | PENDING_AUTHORITY_APPROVAL | Chờ Người có thẩm quyền |
@@ -70,6 +71,7 @@ Application Database
 | SENT_TO_ACCESS_TEAM | Đã chuyển bộ phận Mở truy cập |
 | PENDING_DBA | Chờ DBA/quản trị CSDL |
 | PENDING_EXECUTION | Chờ người thực hiện |
+| PENDING_RECEIPT | Chờ ký nhận bàn giao tài khoản (04B-BGTK) |
 | IN_PROGRESS | Đang thực hiện/mở truy cập |
 | COMPLETED | Hoàn thành |
 | RETURNED | Chuyển trả |
