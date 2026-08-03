@@ -6,6 +6,11 @@ metadata:
   title: Quản lý truy cập CSDL
 
   annotations:
+    # Liên kết đến GitHub repository để hiển thị PRs, Issues, Workflows
+    github.com/project-slug: tin12b1/test-backstage-1-ai
+    # Chỉ dẫn nơi lưu source code (thư mục cụ thể trong repo)
+    backstage.io/source-location: url:https://github.com/tin12b1/test-backstage-1-ai
+    # Kích hoạt TechDocs - đọc tài liệu từ thư mục docs/ trong repo
     backstage.io/techdocs-ref: dir:.
 
 spec:
