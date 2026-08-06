@@ -4,16 +4,16 @@ metadata:
   name: db-access
   title: Quản lý truy cập CSDL
   # Đưa tags ra ngoài này (ngang hàng với annotations)
-  annotations:
-    # 1. Liên kết đến GitHub repository để hiển thị PRs, Issues, Workflows
-    github.com/project-slug: tin12b1/test-backstage-1-ai
-    # 2. Kích hoạt TechDocs - đọc tài liệu từ thư mục docs/ trong repo
-    backstage.io/techdocs-ref: dir:.
   tags:
     - java-17
     - spring-boot-2.2
     - postgresql
     - redis
+  annotations:
+    # 1. Liên kết đến GitHub repository để hiển thị PRs, Issues, Workflows
+    github.com/project-slug: tin12b1/test-backstage-1-ai
+    # 2. Kích hoạt TechDocs - đọc tài liệu từ thư mục docs/ trong repo
+    backstage.io/techdocs-ref: dir:.
 spec:
   type: website
   lifecycle: production
