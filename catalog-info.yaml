@@ -13,6 +13,8 @@ metadata:
     github.com/project-slug: tin12b1/test-backstage-1-ai
     # 2. Kích hoạt TechDocs - đọc tài liệu từ thư mục docs/ trong repo
     backstage.io/techdocs-ref: dir:.
+    # 3. Phiên bản
+    app.version/current: "v1.4.2"
 spec:
   type: website
   lifecycle: production
