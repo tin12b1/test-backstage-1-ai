@@ -1,10 +1,8 @@
 apiVersion: backstage.io/v1alpha1
 kind: Component
-
 metadata:
   name: db-access
   title: Quản lý truy cập CSDL
-
   annotations:
     # 1. Liên kết đến GitHub repository để hiển thị PRs, Issues, Workflows
     github.com/project-slug: tin12b1/test-backstage-1-ai
@@ -12,11 +10,10 @@ metadata:
     backstage.io/techdocs-ref: dir:.
     # 3. Quản lý Framework / Ngôn ngữ / DB / Technology
     tags:
-      - java 17
-      - spring-boot 2.2
+      - java-17
+      - spring-boot-2.2
       - postgresql
       - redis
-
 spec:
   type: website
   lifecycle: production
