@@ -3,18 +3,16 @@ kind: Component
 metadata:
   name: db-access
   title: Quản lý truy cập CSDL
+  tags:
+    - java-17
+    - spring-boot-2-2   # Đổi dấu chấm thành dấu gạch ngang
+    - postgresql
+    - redis
   annotations:
     # 1. Liên kết đến GitHub repository để hiển thị PRs, Issues, Workflows
     github.com/project-slug: tin12b1/test-backstage-1-ai
-    
     # 2. Kích hoạt TechDocs - đọc tài liệu từ thư mục docs/ trong repo
     backstage.io/techdocs-ref: dir:.
-    
-    # 3. Quản lý công nghệ và phiên bản chi tiết qua annotations (thoải mái dùng dấu chấm, số)
-    company.com/language: "java-17"
-    company.com/framework: "spring-boot-2.2"
-    company.com/database: "postgresql"
-    company.com/cache: "redis"
 spec:
   type: website
   lifecycle: production
