@@ -13,7 +13,7 @@ metadata:
     # 3. Quản lý Framework / Ngôn ngữ / DB / Technology
     tags:
     - java
-    - spring-boot
+    - springboot
     - postgresql
     - redis
 
