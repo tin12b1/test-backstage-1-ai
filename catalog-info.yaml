@@ -3,10 +3,9 @@ kind: Component
 metadata:
   name: db-access
   title: Quản lý truy cập CSDL
-  # Đưa tags ra ngoài này (ngang hàng với annotations)
   tags:
     - java-17
-    - spring-boot-2.2
+    - spring-boot-2-2   # Đổi dấu chấm thành dấu gạch ngang
     - postgresql
     - redis
   annotations:
