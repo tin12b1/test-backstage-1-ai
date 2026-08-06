@@ -12,10 +12,10 @@ metadata:
     backstage.io/techdocs-ref: dir:.
     # 3. Quản lý Framework / Ngôn ngữ / DB / Technology
     tags:
-    - java
-    - springboot
-    - postgresql
-    - redis
+      - java 17
+      - spring-boot 2.2
+      - postgresql
+      - redis
 
 spec:
   type: website
